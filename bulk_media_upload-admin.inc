@@ -1,5 +1,5 @@
 <?php
-function mass_media_upload_admin($form, &$form_state) {
+function bulk_media_upload_admin($form, &$form_state) {
   $form = array();
   
   $nodetypes = array();
@@ -7,15 +7,15 @@ function mass_media_upload_admin($form, &$form_state) {
     $nodetypes[$type->type] = $type->name;
   }
   
-  $form['mass_media_upload_nodetype'] = array(
+  $form['bulk_media_upload_nodetype'] = array(
     '#type' => 'select',
     '#title' => t('Nodetype'),
-    '#default_value' => variable_get('mass_media_upload_nodetype'),
+    '#default_value' => variable_get('bulk_media_upload_nodetype'),
     '#description' => t('Which Nodetype should be generated'),
     '#required' => TRUE,
     '#options' => $nodetypes,
     '#ajax' => array(
-      'callback' => 'mass_media_upload_admin_ajax',
+      'callback' => 'bulk_media_upload_admin_ajax',
       'wrapper' => 'mediaelement-div',
       'method' => 'replace',
       'effect' => 'fade',
@@ -27,10 +27,10 @@ function mass_media_upload_admin($form, &$form_state) {
     '#suffix' => '</div>'
   );
   
-  if(isset($form_state['values']['mass_media_upload_nodetype'])){
-    $nodetype = $form_state['values']['mass_media_upload_nodetype'];
+  if(isset($form_state['values']['bulk_media_upload_nodetype'])){
+    $nodetype = $form_state['values']['bulk_media_upload_nodetype'];
   }else{
-    $nodetype = variable_get('mass_media_upload_nodetype');
+    $nodetype = variable_get('bulk_media_upload_nodetype');
   }
   
   if($nodetype){
@@ -44,16 +44,16 @@ function mass_media_upload_admin($form, &$form_state) {
     }
     
     if(count($mediafields) > 0){
-      $form['mediafield-wrapper']['mass_media_upload_mediafield'] = array(
+      $form['mediafield-wrapper']['bulk_media_upload_mediafield'] = array(
         '#type' => 'select',
         '#title' => t('Mediafield'),
-        '#default_value' => variable_get('mass_media_upload_mediafield'),
+        '#default_value' => variable_get('bulk_media_upload_mediafield'),
         '#description' => t('Select the mediafield which should be filled with the uploaded files'),
         '#required' => TRUE,
         '#options' => $mediafields,
       );
     }else{
-      $form['mediafield-wrapper']['mass_media_upload_mediafield_info'] = array(
+      $form['mediafield-wrapper']['bulk_media_upload_mediafield_info'] = array(
         '#markup' => '<p>There are no mediafields assigned to nodetype <strong>' . $nodetype . '</strong></p>',
         
       );  
@@ -63,14 +63,14 @@ function mass_media_upload_admin($form, &$form_state) {
   return system_settings_form($form);
 }
 
-function mass_media_upload_admin_validate($form, &$form_state) {
+function bulk_media_upload_admin_validate($form, &$form_state) {
   if($form_state['submitted']){
-    if(!isset($form_state['values']['mass_media_upload_mediafield']) || $form_state['values']['mass_media_upload_mediafield'] == '') {
+    if(!isset($form_state['values']['bulk_media_upload_mediafield']) || $form_state['values']['bulk_media_upload_mediafield'] == '') {
       form_set_error('', t('You must select a mediafield'));
     }
   }
 }
 
-function mass_media_upload_admin_ajax($form, $form_state) {
+function bulk_media_upload_admin_ajax($form, $form_state) {
   return $form['mediafield-wrapper'];
 }

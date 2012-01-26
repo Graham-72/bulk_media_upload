@@ -1,0 +1,31 @@
+<?php
+function bulk_media_upload_menu() {
+  $items['admin/content/media/bulk_upload'] = array(
+    'title' => t('Bulk Media Upload'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bulk_media_upload_upload_form'),
+    'access callback' => TRUE,
+    'file' => 'bulk_media_upload-upload.inc',
+  );
+  
+  $items['admin/content/media/bulk_upload/summary'] = array(
+    'title' => t('Bulk Media Upload Summary'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bulk_media_upload_summary'),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'bulk_media_upload-summary.inc',
+  );
+  
+  $items['admin/config/media/bulk_media_upload'] = array(
+    'title' => t('Bulk Media Upload Settings'),
+    'description' => t(''),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('bulk_media_upload_admin'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'bulk_media_upload-admin.inc',
+   );
+  
+  return $items;
+}

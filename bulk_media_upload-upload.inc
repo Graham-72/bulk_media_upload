@@ -1,12 +1,12 @@
 <?php
-function mass_media_upload_upload_form($form, &$form_state) {
+function bulk_media_upload_upload_form($form, &$form_state) {
   global $language;
   
-  $nodetype = variable_get('mass_media_upload_nodetype','');
-  $mediafield = variable_get('mass_media_upload_mediafield','');
+  $nodetype = variable_get('bulk_media_upload_nodetype','');
+  $mediafield = variable_get('bulk_media_upload_mediafield','');
   
   if (empty($nodetype) || empty($mediafield)) {
-    drupal_set_message(t('You have not configured the Media Mass Upload Module. Go to the ' . l('configuration page', 'admin/config/media/mass_media_upload') . ' and fix this! As a result, this form is disabled.'));
+    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l('configuration page', 'admin/config/media/bulk_media_upload') . ' and fix this! As a result, this form is disabled.'), 'error');
     $disabled = TRUE;
   }else{
     $disabled = FALSE;
@@ -20,7 +20,7 @@ function mass_media_upload_upload_form($form, &$form_state) {
   
   $form['upload'] = array(
     '#type' => 'plupload',
-    '#title' => t('Mass Media Upload'),
+    '#title' => t('Bulk Media Upload'),
     '#description' => t(''),
     '#required' => TRUE,
     '#disabled' => $disabled
@@ -63,10 +63,10 @@ function mass_media_upload_upload_form($form, &$form_state) {
 }
 
 
-function mass_media_upload_upload_form_validate($form, &$form_state) {
+function bulk_media_upload_upload_form_validate($form, &$form_state) {
 }
 
-function mass_media_upload_upload_form_submit($form, &$form_state){
+function bulk_media_upload_upload_form_submit($form, &$form_state){
   
   //Save the files
   $scheme = variable_get('file_default_scheme', 'public') . '://';
@@ -99,23 +99,23 @@ function mass_media_upload_upload_form_submit($form, &$form_state){
   $batch = array(
     'title' => t('Generating Nodes'),
     'error_message' => t('Node generation has encountered an error.'),
-    'finished' => 'mass_media_upload_batch_finished',
+    'finished' => 'bulk_media_upload_batch_finished',
     //'file' => drupal_get_path('module', 'batch_example') . '/batch_example.inc',
-    'file' => drupal_get_path('module', 'mass_media_upload') . '/mass_media_upload-upload.inc',
+    'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload-upload.inc',
   );
   
   foreach ($saved_files as $file) {
-    $batch['operations'][] = array('mass_media_upload_generate_node', array($file->fid, $form_state['values']['default_values']));
+    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file->fid, $form_state['values']['default_values']));
   }
   
   batch_set($batch);
 }
 
-function mass_media_upload_generate_node($fid, $default_values, &$context) {
+function bulk_media_upload_generate_node($fid, $default_values, &$context) {
   $file = file_load($fid);
   
   $node = new stdClass();
-  $node->type = variable_get('mass_media_upload_nodetype','');
+  $node->type = variable_get('bulk_media_upload_nodetype','');
   node_object_prepare($node);
   
   $node->title    = $file->filename;
@@ -133,9 +133,9 @@ function mass_media_upload_generate_node($fid, $default_values, &$context) {
   $context['results']['nids'][] = $node->nid;
 }
 
-function mass_media_upload_batch_finished($success, $results, $operations) {
+function bulk_media_upload_batch_finished($success, $results, $operations) {
   drupal_set_message(t('Node generation completed'));
-  $_SESSION['mass_media_upload_batch_result'] = $results;
-  drupal_goto('admin/content/media/massupload/summary');
+  $_SESSION['bulk_media_upload_batch_result'] = $results;
+  drupal_goto('admin/content/media/bulk_upload/summary');
 }
 

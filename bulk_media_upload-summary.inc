@@ -1,7 +1,7 @@
 <?php
-function mass_media_upload_summary(){
+function bulk_media_upload_summary(){
   $form = array();
-  if(!isset($_SESSION['mass_media_upload_batch_result']['nids'])){
+  if(!isset($_SESSION['bulk_media_upload_batch_result']['nids'])){
     $form['info'] = array(
       '#markup' => '<p>There was no media uploaded.</p>',
     );
@@ -31,8 +31,8 @@ function mass_media_upload_summary(){
   $form['options']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Update'),
-    '#validate' => array('mass_media_upload_summary_nodes_validate'),
-    '#submit' => array('mass_media_upload_summary_nodes_submit'),
+    '#validate' => array('bulk_media_upload_summary_nodes_validate'),
+    '#submit' => array('bulk_media_upload_summary_nodes_submit'),
   );
 
   // Enable language column if translation module is enabled or if we have any
@@ -57,7 +57,7 @@ function mass_media_upload_summary(){
 
   $nids = $query
     ->fields('n',array('nid'))
-    ->condition('n.nid', $_SESSION['mass_media_upload_batch_result']['nids'], 'IN')
+    ->condition('n.nid', $_SESSION['bulk_media_upload_batch_result']['nids'], 'IN')
     ->limit(50)
     ->orderByHeader($header)
     ->execute()
@@ -166,7 +166,7 @@ function mass_media_upload_summary(){
  * Check if any nodes have been selected to perform the chosen
  * 'Update option' on.
  */
-function mass_media_upload_summary_nodes_validate($form, &$form_state) {
+function bulk_media_upload_summary_nodes_validate($form, &$form_state) {
   // Error if there are no items to select.
   if (!is_array($form_state['values']['nodes']) || !count(array_filter($form_state['values']['nodes']))) {
     form_set_error('', t('No items selected.'));
@@ -178,7 +178,7 @@ function mass_media_upload_summary_nodes_validate($form, &$form_state) {
  *
  * Execute the chosen 'Update option' on the selected nodes.
  */
-function mass_media_upload_summary_nodes_submit($form, &$form_state) {
+function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
   $operations = module_invoke_all('node_operations');
   $operation = $operations[$form_state['values']['operation']];
   // Filter out unchecked nodes
