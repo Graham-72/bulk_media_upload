@@ -6,13 +6,16 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   $mediafield = variable_get('bulk_media_upload_mediafield','');
   
   if (empty($nodetype) || empty($mediafield)) {
-    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l('configuration page', 'admin/config/media/bulk_media_upload') . ' and fix this! As a result, this form is disabled.'), 'error');
+    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l('configuration page', 'admin/config/media/bulk_media_upload') . ' and fix this!'), 'error');
     return $form;
   }
   
+  $nodetype_info = node_type_load($nodetype);
+  $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
+  
   $form['import_information'] = array(
-    '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype . '</strong></p>'
-                .'<p>Mediafield used for uploading your media: <strong>' . $mediafield . '</strong></p>',
+    '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
+                .'<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
   );
   
   //Title field
@@ -25,25 +28,22 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#required' => TRUE,
   );
   
-  if (module_exists('token')) {
-    $form['token_help'] = array(
-      '#title' => t('Replacement patterns'),
-      '#type' => 'fieldset',
-      '#collapsible' => TRUE,
-      '#collapsed' => TRUE
-      );
+  $form['token_help'] = array(
+    '#title' => t('Replacement patterns'),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE
+  );
 
-    $form['token_help']['help'] = array(
-      '#theme' => 'token_tree',
-      '#token_types' => array('node', 'file'),
-      '#global_types' => TRUE,
-      '#click_insert' => TRUE,
-      );
-  }
+  $form['token_help']['help'] = array(
+    '#theme' => 'token_tree',
+    '#token_types' => array('node', 'file'),
+    '#global_types' => TRUE,
+    '#click_insert' => TRUE,
+  );
   
   
   //plupload field for uploading the media files
-  $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
   
   $form['upload'] = array(
     '#type' => 'plupload',
@@ -93,52 +93,33 @@ function bulk_media_upload_upload_form_validate($form, &$form_state) {
 
 function bulk_media_upload_upload_form_submit($form, &$form_state){
   
-  //Save the files
-  $scheme = variable_get('file_default_scheme', 'public') . '://';
-  $saved_files = array();
-  // We can't use file_save_upload() because of http://www.jacobsingh.name/content/tight-coupling-no-not
-  foreach ($form_state['values']['upload'] as $uploaded_file) {
-    if ($uploaded_file['status'] == 'done') {
-      $source = $uploaded_file['tmppath'];
-      $destination = file_stream_wrapper_uri_normalize($scheme . $uploaded_file['name']);
-      // Rename it to its original name, and put it in its final home.
-      // Note - not using file_move here because if we call file_get_mime
-      // (in file_uri_to_object) while it has a .tmp extension, it horks.
-
-      $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
-
-      $file = file_uri_to_object($destination);
-      file_save($file);
-      _media_save_file_permenently($file);
-
-      $saved_files[] = $file;
-    }
-    else {
-      // @todo: move this to element validate or something and clean up t().
-      form_set_error('pud', "Upload of {$uploaded_file['name']} failed");
-    }
-  }
-  
   //Prepare the batch process
-  
   $batch = array(
     'title' => t('Generating Nodes'),
     'error_message' => t('Node generation has encountered an error.'),
     'finished' => 'bulk_media_upload_batch_finished',
-    //'file' => drupal_get_path('module', 'batch_example') . '/batch_example.inc',
     'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload-upload.inc',
   );
   
-  foreach ($saved_files as $file) {
-    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file->fid, $form_state['values']));
+  foreach ($form_state['values']['upload'] as $file) {
+    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file, array_diff_key($form_state['values'], array('upload' => NULL))));
   }
   
   batch_set($batch);
 }
 
-function bulk_media_upload_generate_node($fid, $values, &$context) {
-  $file = file_load($fid);
+function bulk_media_upload_generate_node($tmpfile, $values, &$context) {
+  //Save media file
+  $scheme = variable_get('file_default_scheme', 'public') . '://';
+  $source = $tmpfile['tmppath'];
+  $destination = file_stream_wrapper_uri_normalize($scheme . $tmpfile['name']);
+  $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
   
+  $file = file_uri_to_object($destination);
+  file_save($file);
+  _media_save_file_permenently($file);
+  
+  //Save node 
   $node = new stdClass();
   $node->type = variable_get('bulk_media_upload_nodetype');
   node_object_prepare($node);
@@ -146,7 +127,7 @@ function bulk_media_upload_generate_node($fid, $values, &$context) {
   $node->title    = $file->filename;
   $node->language = LANGUAGE_NONE;
 
-  $media = array('fid' => $fid, 'title' => NULL, 'data' => NULL);
+  $media = array('fid' => $file->fid, 'title' => NULL, 'data' => NULL);
   $node->field_media['und'][0] = $media;
 
   //Add default values to node

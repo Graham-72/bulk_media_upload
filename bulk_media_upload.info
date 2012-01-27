@@ -5,6 +5,7 @@ description = With Bulk Media Upload you can upload a bunch of media files and a
 
 dependencies[] = media
 dependencies[] = plupload
+dependencies[] = token
 
 files[] = bulk_image_upload.module
 files[] = bulk_image_upload-upload.inc

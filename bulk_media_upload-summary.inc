@@ -1,11 +1,18 @@
 <?php
-function bulk_media_upload_summary(){
+function bulk_media_upload_summary($form, $form_state){
+  module_load_include('inc', 'node', 'node.admin');
+  
   $form = array();
   if(!isset($_SESSION['bulk_media_upload_batch_result']['nids'])){
     $form['info'] = array(
-      '#markup' => '<p>There was no media uploaded.</p>',
+      '#markup' => '<p>There was no media uploaded in this session.</p>',
     );
     return $form;
+  }
+  
+  //Confirmation page for node deletion
+  if (isset($form_state['values']['operation']) && $form_state['values']['operation'] == 'delete') {
+    return bulk_media_upload_summary_node_multiple_delete_confirm($form, $form_state, array_filter($form_state['values']['nodes']));
   }
   
   $admin_access = user_access('administer nodes');
@@ -18,6 +25,7 @@ function bulk_media_upload_summary(){
     '#access' => $admin_access,
   );
   $options = array();
+  
   foreach (module_invoke_all('node_operations') as $operation => $array) {
     $options[$operation] = $array['label'];
   }
@@ -202,3 +210,35 @@ function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
   }
 }
 
+function bulk_media_upload_summary_node_multiple_delete_confirm($form, &$form_state, $nodes) {
+  $form['nodes'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
+  // array_filter returns only elements with TRUE values
+  foreach ($nodes as $nid => $value) {
+    $title = db_query('SELECT title FROM {node} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
+    $form['nodes'][$nid] = array(
+      '#type' => 'hidden',
+      '#value' => $nid,
+      '#prefix' => '<li>',
+      '#suffix' => check_plain($title) . "</li>\n",
+    );
+  }
+  $form['operation'] = array('#type' => 'hidden', '#value' => 'delete');
+  $form['#submit'][] = 'bulk_media_upload_summary_node_multiple_delete_confirm_submit';
+  $confirm_question = format_plural(count($nodes),
+                                  'Are you sure you want to delete this item?',
+                                  'Are you sure you want to delete these items?');
+  return confirm_form($form,
+                    $confirm_question,
+                    'admin/content', t('This action cannot be undone.'),
+                    t('Delete'), t('Cancel'));
+}
+
+function bulk_media_upload_summary_node_multiple_delete_confirm_submit($form, &$form_state) {
+  if ($form_state['values']['confirm']) {
+    node_delete_multiple(array_keys($form_state['values']['nodes']));
+    $count = count($form_state['values']['nodes']);
+    watchdog('content', 'Deleted @count posts.', array('@count' => $count));
+    drupal_set_message(format_plural($count, 'Deleted 1 post.', 'Deleted @count posts.'));
+  }
+  $form_state['redirect'] = 'admin/content/media/bulk_upload/summary';
+}
