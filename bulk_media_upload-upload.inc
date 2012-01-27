@@ -7,15 +7,42 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   
   if (empty($nodetype) || empty($mediafield)) {
     drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l('configuration page', 'admin/config/media/bulk_media_upload') . ' and fix this! As a result, this form is disabled.'), 'error');
-    $disabled = TRUE;
-  }else{
-    $disabled = FALSE;
-    $form['import_information'] = array(
-      '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype . '</strong></p>'
-                  .'<p>Mediafield used for uploading your media: <strong>' . $mediafield . '</strong></p>',
-    );
+    return $form;
   }
   
+  $form['import_information'] = array(
+    '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype . '</strong></p>'
+                .'<p>Mediafield used for uploading your media: <strong>' . $mediafield . '</strong></p>',
+  );
+  
+  //Title field
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#default_value' => '[file:name]', 
+    '#size' => 60, 
+    '#maxlength' => 255, 
+    '#required' => TRUE,
+  );
+  
+  if (module_exists('token')) {
+    $form['token_help'] = array(
+      '#title' => t('Replacement patterns'),
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE
+      );
+
+    $form['token_help']['help'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('node', 'file'),
+      '#global_types' => TRUE,
+      '#click_insert' => TRUE,
+      );
+  }
+  
+  
+  //plupload field for uploading the media files
   $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
   
   $form['upload'] = array(
@@ -23,41 +50,39 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#title' => t('Bulk Media Upload'),
     '#description' => t(''),
     '#required' => TRUE,
-    '#disabled' => $disabled
   );
   
   if(isset($mediafield_info['settings']['file_extensions'])){
     $form['upload']['#upload_validators']['file_validate_extensions'][] = $mediafield_info['settings']['file_extensions'];
   }
-  if(!$disabled){
-    $form['default_values'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Default Values'),
-      '#tree' => TRUE
-    );
-    
-    //Create the node creation form to get all assigned fields and add them to the defaul value fieldset
-    
-    $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
-    
-    $node = (object) array(
-      'uid' => 1,
-      'name' => '',
-      'type' => $nodetype,
-      'language' => LANGUAGE_NONE,
-    );
-    $nodeform = array();
-    
-    field_attach_form('node', $node, $nodeform, $form_state);
-    
-    //Delete Media field from default values
-    $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
-  }
+  
+  //Default values for node creation
+  $form['default_values'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Default Values'),
+    '#tree' => TRUE
+  );
+  
+  //Create the node creation form to get all assigned fields and add them to the default value fieldset
+  $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
+  
+  $node = (object) array(
+    'uid' => 1,
+    'name' => '',
+    'type' => $nodetype,
+    'language' => LANGUAGE_NONE,
+  );
+  $nodeform = array();
+  
+  field_attach_form('node', $node, $nodeform, $form_state);
+  
+  //Delete Media field from default values
+  $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
+  
   
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Generate Nodes'),
-    '#disabled' => $disabled,
   );
   return $form;
 }
@@ -105,17 +130,17 @@ function bulk_media_upload_upload_form_submit($form, &$form_state){
   );
   
   foreach ($saved_files as $file) {
-    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file->fid, $form_state['values']['default_values']));
+    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file->fid, $form_state['values']));
   }
   
   batch_set($batch);
 }
 
-function bulk_media_upload_generate_node($fid, $default_values, &$context) {
+function bulk_media_upload_generate_node($fid, $values, &$context) {
   $file = file_load($fid);
   
   $node = new stdClass();
-  $node->type = variable_get('bulk_media_upload_nodetype','');
+  $node->type = variable_get('bulk_media_upload_nodetype');
   node_object_prepare($node);
   
   $node->title    = $file->filename;
@@ -124,12 +149,19 @@ function bulk_media_upload_generate_node($fid, $default_values, &$context) {
   $media = array('fid' => $fid, 'title' => NULL, 'data' => NULL);
   $node->field_media['und'][0] = $media;
 
-  foreach($default_values as $field => $value){
+  //Add default values to node
+  foreach($values['default_values'] as $field => $value){
     $node->$field = $value;
   }
   
   node_save($node);
-  $context['message'] = t('Importing: @filename', array('@filename' => $fid));
+  
+  //Replace tokens in title - this have to be done after node_save
+  $node->title = token_replace($values['title'], array('node' => $node, 'file' => $file));
+  
+  node_save($node);
+  
+  $context['message'] = t('Importing: @filename', array('@filename' => $file->filename));
   $context['results']['nids'][] = $node->nid;
 }
 

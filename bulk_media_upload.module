@@ -6,6 +6,7 @@ function bulk_media_upload_menu() {
     'page arguments' => array('bulk_media_upload_upload_form'),
     'access callback' => TRUE,
     'file' => 'bulk_media_upload-upload.inc',
+    'type' => MENU_NORMAL_ITEM
   );
   
   $items['admin/content/media/bulk_upload/summary'] = array(
@@ -13,7 +14,7 @@ function bulk_media_upload_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bulk_media_upload_summary'),
     'access callback' => TRUE,
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_TASK,
     'file' => 'bulk_media_upload-summary.inc',
   );
   
