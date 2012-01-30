@@ -5,7 +5,7 @@ function bulk_media_upload_menu() {
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bulk_media_upload_upload_form'),
     'access callback' => TRUE,
-    'file' => 'bulk_media_upload-upload.inc',
+    'file' => 'bulk_media_upload.upload.inc',
     'type' => MENU_NORMAL_ITEM
   );
 
@@ -15,7 +15,7 @@ function bulk_media_upload_menu() {
     'page arguments' => array('bulk_media_upload_summary'),
     'access callback' => TRUE,
     'type' => MENU_LOCAL_TASK,
-    'file' => 'bulk_media_upload-summary.inc',
+    'file' => 'bulk_media_upload.summary.inc',
   );
 
   $items['admin/config/media/bulk_media_upload'] = array(
@@ -24,7 +24,7 @@ function bulk_media_upload_menu() {
     'page arguments' => array('bulk_media_upload_admin'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
-    'file' => 'bulk_media_upload-admin.inc',
+    'file' => 'bulk_media_upload.admin.inc',
   );
   return $items;
 }
