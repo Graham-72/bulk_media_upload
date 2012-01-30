@@ -4,7 +4,7 @@ function bulk_media_upload_menu() {
     'title' => 'Bulk Media Upload',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bulk_media_upload_upload_form'),
-    'access callback' => TRUE,
+    'access arguments' => array('bulk upload media'),
     'file' => 'bulk_media_upload.upload.inc',
     'type' => MENU_NORMAL_ITEM
   );
@@ -13,7 +13,7 @@ function bulk_media_upload_menu() {
     'title' => 'Bulk Media Upload Summary',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bulk_media_upload_summary'),
-    'access callback' => TRUE,
+    'access arguments' => array('bulk upload media'),
     'type' => MENU_LOCAL_TASK,
     'file' => 'bulk_media_upload.summary.inc',
   );
@@ -27,4 +27,25 @@ function bulk_media_upload_menu() {
     'file' => 'bulk_media_upload.admin.inc',
   );
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+
+function bulk_media_upload_permission(){
+  return array(
+    'bulk upload media' => array(
+      'title' => t('Bulk upload media'),
+      'description' => t('Allows users to bulk upload media files.')
+    )
+  );
+}
+
+/**
+ * Help page for bulk media upload
+ */
+
+function bulk_media_upload_help($path, $arg){
+  return '<p>Check out this page for documentation: <a href="http://drupal.org/node/1421464">http://drupal.org/node/1421464</a></p>';
 }
