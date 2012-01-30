@@ -47,5 +47,8 @@ function bulk_media_upload_permission(){
  */
 
 function bulk_media_upload_help($path, $arg){
-  return '<p>Check out this page for documentation: <a href="http://drupal.org/node/1421464">http://drupal.org/node/1421464</a></p>';
+  if ($path == 'admin/help#bulk_media_upload'){
+    return '<p>Check out this page for documentation: <a href="http://drupal.org/node/1421464">http://drupal.org/node/1421464</a></p>';
+  }
+  return '';
 }
