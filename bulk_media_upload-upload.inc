@@ -101,14 +101,14 @@ function bulk_media_upload_upload_form_submit($form, &$form_state){
     'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload-upload.inc',
   );
   
-  foreach ($form_state['values']['upload'] as $file) {
-    $batch['operations'][] = array('bulk_media_upload_generate_node', array($file, array_diff_key($form_state['values'], array('upload' => NULL))));
+  foreach ($form_state['values']['upload'] as $tmpfile) {
+    $batch['operations'][] = array('bulk_media_upload_generate_node', array($tmpfile, $form, $form_state));
   }
   
   batch_set($batch);
 }
 
-function bulk_media_upload_generate_node($tmpfile, $values, &$context) {
+function bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context) {
   //Save media file
   $scheme = variable_get('file_default_scheme', 'public') . '://';
   $source = $tmpfile['tmppath'];
@@ -127,18 +127,20 @@ function bulk_media_upload_generate_node($tmpfile, $values, &$context) {
   $node->title    = $file->filename;
   $node->language = LANGUAGE_NONE;
 
-  $media = array('fid' => $file->fid, 'title' => NULL, 'data' => NULL);
-  $node->field_media['und'][0] = $media;
+  node_save($node);
+  
+  //Media field
+  $mediafield_name = variable_get('bulk_media_upload_mediafield');
+  $mediafield_value[LANGUAGE_NONE][0]['fid'] = $file->fid;
+  $node->$mediafield_name = $mediafield_value;
 
-  //Add default values to node
-  foreach($values['default_values'] as $field => $value){
-    $node->$field = $value;
-  }
+  //Default values
+  field_attach_submit('node', $node, $form['default_values'], $form_state);
   
   node_save($node);
   
   //Replace tokens in title - this have to be done after node_save
-  $node->title = token_replace($values['title'], array('node' => $node, 'file' => $file));
+  $node->title = token_replace($form_state['values']['title'], array('node' => $node, 'file' => $file));
   
   node_save($node);
   
