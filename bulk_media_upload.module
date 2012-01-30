@@ -1,4 +1,12 @@
 <?php
+/**
+ * @file
+ * Bulk Media Upload Module
+ */
+
+/**
+ * Implementation of hook_menu()
+ */
 function bulk_media_upload_menu() {
   $items['admin/content/media/bulk_upload'] = array(
     'title' => 'Bulk Media Upload',
@@ -32,8 +40,8 @@ function bulk_media_upload_menu() {
 /**
  * Implements hook_permission().
  */
-function bulk_media_upload_permission(){
-  return array (
+function bulk_media_upload_permission() {
+  return array(
     'bulk upload media' => array(
       'title' => t('Bulk upload media'),
       'description' => t('Allows users to bulk upload media files.'),

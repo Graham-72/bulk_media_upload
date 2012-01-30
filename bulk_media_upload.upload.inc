@@ -53,7 +53,6 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 
 
   // Plupload field for uploading the media files
-
   $form['upload'] = array(
     '#type' => 'plupload',
     '#title' => t('Bulk Media Upload'),
@@ -69,7 +68,7 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   $form['default_values'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default Values'),
-    '#tree' => TRUE
+    '#tree' => TRUE,
   );
 
   // Create the node creation form to get all assigned fields and add them to the default value fieldset
@@ -97,13 +96,13 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 }
 
 /**
- * Implementation of hook_form_validate()
+ * Implements hook_validate()
  */
 function bulk_media_upload_upload_form_validate($form, &$form_state) {
 }
 
 /**
- * Implementation of hook_form_submit()
+ * Implements hook_submit()
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
 

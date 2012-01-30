@@ -5,6 +5,9 @@
  *
  */
 
+/**
+ * Admin configuration page
+ */
 function bulk_media_upload_admin($form, &$form_state) {
   $form = array();
 
@@ -71,6 +74,9 @@ function bulk_media_upload_admin($form, &$form_state) {
   return system_settings_form($form);
 }
 
+/**
+ * Implementation of hook_validate();
+ */
 function bulk_media_upload_admin_validate($form, &$form_state) {
   if ($form_state['submitted']) {
     if (!isset($form_state['values']['bulk_media_upload_mediafield']) || $form_state['values']['bulk_media_upload_mediafield'] == '') {
@@ -79,6 +85,9 @@ function bulk_media_upload_admin_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Returns media field wrapper for ajax request
+ */
 function bulk_media_upload_admin_ajax($form, $form_state) {
   return $form['mediafield-wrapper'];
 }

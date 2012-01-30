@@ -19,7 +19,7 @@ function bulk_media_upload_summary($form, $form_state) {
     return $form;
   }
 
-  //Confirmation page for node deletion
+  // Confirmation page for node deletion.
   if (isset($form_state['values']['operation']) && $form_state['values']['operation'] == 'delete') {
     return bulk_media_upload_summary_node_multiple_delete_confirm($form, $form_state, array_filter($form_state['values']['nodes']));
   }
@@ -70,7 +70,7 @@ function bulk_media_upload_summary($form, $form_state) {
   $header['operations'] = array('data' => t('Operations'));
 
   $query = db_select('node', 'n')->extend('PagerDefault')->extend('TableSort');
-  // node_build_filter_query($query);
+  /* node_build_filter_query($query); */
 
   $nids = $query
     ->fields('n', array('nid'))
@@ -175,8 +175,6 @@ function bulk_media_upload_summary($form, $form_state) {
   return $form;
 }
 
-
-
 /**
  * Validate bulk_media_upload_summary form submissions.
  */
@@ -193,7 +191,7 @@ function bulk_media_upload_summary_nodes_validate($form, &$form_state) {
 function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
   $operations = module_invoke_all('node_operations');
   $operation = $operations[$form_state['values']['operation']];
-  // Filter out unchecked nodes
+  // Filter out unchecked nodes.
   $nodes = array_filter($form_state['values']['nodes']);
   if ($function = $operation['callback']) {
     // Add in callback arguments if present.
@@ -215,11 +213,11 @@ function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
 }
 
 /**
- * Displays the delete confirmation apge
+ * Displays the delete confirmation page
  */
 function bulk_media_upload_summary_node_multiple_delete_confirm($form, &$form_state, $nodes) {
   $form['nodes'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
-  // array_filter returns only elements with TRUE values
+  // array_filter returns only elements with TRUE values.
   foreach ($nodes as $nid => $value) {
     $title = db_query('SELECT title FROM {node} WHERE nid = :nid', array(':nid' => $nid))->fetchField();
     $form['nodes'][$nid] = array(

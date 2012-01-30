@@ -6,8 +6,3 @@ description = With Bulk Media Upload you can upload a bunch of media files and a
 dependencies[] = media
 dependencies[] = plupload
 dependencies[] = token
-
-files[] = bulk_media_upload.module
-files[] = bulk_media_upload.upload.inc
-files[] = bulk_media_upload.summary.inc
-files[] = bulk_media_upload.admin.inc
