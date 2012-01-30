@@ -6,7 +6,7 @@ function bulk_media_upload_menu() {
     'page arguments' => array('bulk_media_upload_upload_form'),
     'access arguments' => array('bulk upload media'),
     'file' => 'bulk_media_upload.upload.inc',
-    'type' => MENU_NORMAL_ITEM
+    'type' => MENU_NORMAL_ITEM,
   );
 
   $items['admin/content/media/bulk_upload/summary'] = array(
@@ -32,22 +32,20 @@ function bulk_media_upload_menu() {
 /**
  * Implements hook_permission().
  */
-
 function bulk_media_upload_permission(){
-  return array(
+  return array (
     'bulk upload media' => array(
       'title' => t('Bulk upload media'),
-      'description' => t('Allows users to bulk upload media files.')
-    )
+      'description' => t('Allows users to bulk upload media files.'),
+    ),
   );
 }
 
 /**
  * Help page for bulk media upload
  */
-
-function bulk_media_upload_help($path, $arg){
-  if ($path == 'admin/help#bulk_media_upload'){
+function bulk_media_upload_help($path, $arg) {
+  if ($path == 'admin/help#bulk_media_upload') {
     return '<p>Check out this page for documentation: <a href="http://drupal.org/node/1421464">http://drupal.org/node/1421464</a></p>';
   }
   return '';

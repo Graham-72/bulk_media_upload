@@ -30,7 +30,7 @@ function bulk_media_upload_admin($form, &$form_state) {
 
   $form['mediafield-wrapper'] = array(
     '#prefix' => '<div id="mediaelement-div">',
-    '#suffix' => '</div>'
+    '#suffix' => '</div>',
   );
 
   if (isset($form_state['values']['bulk_media_upload_nodetype'])) {

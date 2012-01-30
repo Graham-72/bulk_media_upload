@@ -7,7 +7,7 @@ dependencies[] = media
 dependencies[] = plupload
 dependencies[] = token
 
-files[] = bulk_image_upload.module
-files[] = bulk_image_upload.upload.inc
-files[] = bulk_image_upload.summary.inc
-files[] = bulk_image_upload.admin.inc
+files[] = bulk_media_upload.module
+files[] = bulk_media_upload.upload.inc
+files[] = bulk_media_upload.summary.inc
+files[] = bulk_media_upload.admin.inc

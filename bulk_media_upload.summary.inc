@@ -5,6 +5,9 @@
  *
  */
 
+/**
+ * Generates summary table for the generated forms
+ */
 function bulk_media_upload_summary($form, $form_state) {
   module_load_include('inc', 'node', 'node.admin');
 
@@ -59,7 +62,7 @@ function bulk_media_upload_summary($form, $form_state) {
     'type' => array('data' => t('Type'), 'field' => 'n.type'),
     'author' => t('Author'),
     'status' => array('data' => t('Status'), 'field' => 'n.status'),
-    'changed' => array('data' => t('Updated'), 'field' => 'n.changed', 'sort' => 'desc')
+    'changed' => array('data' => t('Updated'), 'field' => 'n.changed', 'sort' => 'desc'),
   );
   if ($multilanguage) {
     $header['language'] = array('data' => t('Language'), 'field' => 'n.language');
@@ -67,7 +70,7 @@ function bulk_media_upload_summary($form, $form_state) {
   $header['operations'] = array('data' => t('Operations'));
 
   $query = db_select('node', 'n')->extend('PagerDefault')->extend('TableSort');
-  //node_build_filter_query($query);
+  // node_build_filter_query($query);
 
   $nids = $query
     ->fields('n', array('nid'))
@@ -175,10 +178,7 @@ function bulk_media_upload_summary($form, $form_state) {
 
 
 /**
- * Validate node_admin_nodes form submissions.
- *
- * Check if any nodes have been selected to perform the chosen
- * 'Update option' on.
+ * Validate bulk_media_upload_summary form submissions.
  */
 function bulk_media_upload_summary_nodes_validate($form, &$form_state) {
   // Error if there are no items to select.
@@ -188,9 +188,7 @@ function bulk_media_upload_summary_nodes_validate($form, &$form_state) {
 }
 
 /**
- * Process node_admin_nodes form submissions.
- *
- * Execute the chosen 'Update option' on the selected nodes.
+ * Process bulk_media_upload_summary form submissions.
  */
 function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
   $operations = module_invoke_all('node_operations');
@@ -216,6 +214,9 @@ function bulk_media_upload_summary_nodes_submit($form, &$form_state) {
   }
 }
 
+/**
+ * Displays the delete confirmation apge
+ */
 function bulk_media_upload_summary_node_multiple_delete_confirm($form, &$form_state, $nodes) {
   $form['nodes'] = array('#prefix' => '<ul>', '#suffix' => '</ul>', '#tree' => TRUE);
   // array_filter returns only elements with TRUE values
@@ -239,6 +240,9 @@ function bulk_media_upload_summary_node_multiple_delete_confirm($form, &$form_st
                     t('Delete'), t('Cancel'));
 }
 
+/**
+ * Bulk deletes nodes
+ */
 function bulk_media_upload_summary_node_multiple_delete_confirm_submit($form, &$form_state) {
   if ($form_state['values']['confirm']) {
     node_delete_multiple(array_keys($form_state['values']['nodes']));
