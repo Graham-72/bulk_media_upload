@@ -1,33 +1,39 @@
 <?php
+/**
+ * @file
+ * Upload form and node generation functions
+ *
+ */
+
 function bulk_media_upload_upload_form($form, &$form_state) {
   global $language;
-  
-  $nodetype = variable_get('bulk_media_upload_nodetype','');
-  $mediafield = variable_get('bulk_media_upload_mediafield','');
-  
+
+  $nodetype = variable_get('bulk_media_upload_nodetype');
+  $mediafield = variable_get('bulk_media_upload_mediafield');
+
   if (empty($nodetype) || empty($mediafield)) {
-    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l('configuration page', 'admin/config/media/bulk_media_upload') . ' and fix this!'), 'error');
+    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l(t('configuration page'), 'admin/config/media/bulk_media_upload') . ' and fix this!'), 'error');
     return $form;
   }
-  
+
   $nodetype_info = node_type_load($nodetype);
   $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
-  
+
   $form['import_information'] = array(
     '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
-                .'<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
+              . '<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
   );
-  
+
   //Title field
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
-    '#default_value' => '[file:name]', 
-    '#size' => 60, 
-    '#maxlength' => 255, 
+    '#default_value' => '[file:name]',
+    '#size' => 60,
+    '#maxlength' => 255,
     '#required' => TRUE,
   );
-  
+
   $form['token_help'] = array(
     '#title' => t('Replacement patterns'),
     '#type' => 'fieldset',
@@ -41,31 +47,31 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#global_types' => TRUE,
     '#click_insert' => TRUE,
   );
-  
-  
+
+
   //plupload field for uploading the media files
-  
+
   $form['upload'] = array(
     '#type' => 'plupload',
     '#title' => t('Bulk Media Upload'),
     '#description' => t(''),
     '#required' => TRUE,
   );
-  
-  if(isset($mediafield_info['settings']['file_extensions'])){
+
+  if (isset($mediafield_info['settings']['file_extensions'])) {
     $form['upload']['#upload_validators']['file_validate_extensions'][] = $mediafield_info['settings']['file_extensions'];
   }
-  
+
   //Default values for node creation
   $form['default_values'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default Values'),
     '#tree' => TRUE
   );
-  
+
   //Create the node creation form to get all assigned fields and add them to the default value fieldset
   $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
-  
+
   $node = (object) array(
     'uid' => 1,
     'name' => '',
@@ -73,13 +79,13 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     'language' => LANGUAGE_NONE,
   );
   $nodeform = array();
-  
+
   field_attach_form('node', $node, $nodeform, $form_state);
-  
+
   //Delete Media field from default values
   $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
-  
-  
+
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Generate Nodes'),
@@ -91,8 +97,8 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 function bulk_media_upload_upload_form_validate($form, &$form_state) {
 }
 
-function bulk_media_upload_upload_form_submit($form, &$form_state){
-  
+function bulk_media_upload_upload_form_submit($form, &$form_state) {
+
   //Prepare the batch process
   $batch = array(
     'title' => t('Generating Nodes'),
@@ -100,11 +106,11 @@ function bulk_media_upload_upload_form_submit($form, &$form_state){
     'finished' => 'bulk_media_upload_batch_finished',
     'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload-upload.inc',
   );
-  
+
   foreach ($form_state['values']['upload'] as $tmpfile) {
     $batch['operations'][] = array('bulk_media_upload_generate_node', array($tmpfile, $form, $form_state));
   }
-  
+
   batch_set($batch);
 }
 
@@ -114,21 +120,21 @@ function bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context
   $source = $tmpfile['tmppath'];
   $destination = file_stream_wrapper_uri_normalize($scheme . $tmpfile['name']);
   $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
-  
+
   $file = file_uri_to_object($destination);
   file_save($file);
   _media_save_file_permenently($file);
-  
-  //Save node 
+
+  //Save node
   $node = new stdClass();
   $node->type = variable_get('bulk_media_upload_nodetype');
   node_object_prepare($node);
-  
+
   $node->title    = $file->filename;
   $node->language = LANGUAGE_NONE;
 
   node_save($node);
-  
+
   //Media field
   $mediafield_name = variable_get('bulk_media_upload_mediafield');
   $mediafield_value[LANGUAGE_NONE][0]['fid'] = $file->fid;
@@ -136,14 +142,14 @@ function bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context
 
   //Default values
   field_attach_submit('node', $node, $form['default_values'], $form_state);
-  
+
   node_save($node);
-  
+
   //Replace tokens in title - this have to be done after node_save
   $node->title = token_replace($form_state['values']['title'], array('node' => $node, 'file' => $file));
-  
+
   node_save($node);
-  
+
   $context['message'] = t('Importing: @filename', array('@filename' => $file->filename));
   $context['results']['nids'][] = $node->nid;
 }
@@ -153,4 +159,3 @@ function bulk_media_upload_batch_finished($success, $results, $operations) {
   $_SESSION['bulk_media_upload_batch_result'] = $results;
   drupal_goto('admin/content/media/bulk_upload/summary');
 }
-

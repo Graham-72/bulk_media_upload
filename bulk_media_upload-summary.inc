@@ -1,20 +1,26 @@
 <?php
-function bulk_media_upload_summary($form, $form_state){
+/**
+ * @file
+ * Summary page which is displayed after the media upload
+ *
+ */
+
+function bulk_media_upload_summary($form, $form_state) {
   module_load_include('inc', 'node', 'node.admin');
-  
+
   $form = array();
-  if(!isset($_SESSION['bulk_media_upload_batch_result']['nids'])){
+  if (!isset($_SESSION['bulk_media_upload_batch_result']['nids'])) {
     $form['info'] = array(
       '#markup' => '<p>There was no media uploaded in this session.</p>',
     );
     return $form;
   }
-  
+
   //Confirmation page for node deletion
   if (isset($form_state['values']['operation']) && $form_state['values']['operation'] == 'delete') {
     return bulk_media_upload_summary_node_multiple_delete_confirm($form, $form_state, array_filter($form_state['values']['nodes']));
   }
-  
+
   $admin_access = user_access('administer nodes');
 
   // Build the 'Update options' form.
@@ -25,7 +31,7 @@ function bulk_media_upload_summary($form, $form_state){
     '#access' => $admin_access,
   );
   $options = array();
-  
+
   foreach (module_invoke_all('node_operations') as $operation => $array) {
     $options[$operation] = $array['label'];
   }
@@ -64,7 +70,7 @@ function bulk_media_upload_summary($form, $form_state){
   //node_build_filter_query($query);
 
   $nids = $query
-    ->fields('n',array('nid'))
+    ->fields('n', array('nid'))
     ->condition('n.nid', $_SESSION['bulk_media_upload_batch_result']['nids'], 'IN')
     ->limit(50)
     ->orderByHeader($header)
