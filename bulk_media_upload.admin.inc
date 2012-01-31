@@ -74,7 +74,7 @@ function bulk_media_upload_admin($form, &$form_state) {
 }
 
 /**
- * Implements hook_validate() for bulk_media_upload_admin.
+ * Implements hook_validate().
  */
 function bulk_media_upload_admin_validate($form, &$form_state) {
   if ($form_state['submitted']) {

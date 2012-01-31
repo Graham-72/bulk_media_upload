@@ -67,7 +67,7 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#tree' => TRUE,
   );
 
-  // Create the node creation form to get all assigned fields and add them to the default value fieldset.
+  // Use the node creation form to extract all assigned fields.
   $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
 
   $node = (object) array(
@@ -78,11 +78,9 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   );
   $nodeform = array();
 
+  // And add these fields to the default value fieldset without the media field.
   field_attach_form('node', $node, $nodeform, $form_state);
-
-  // Delete Media field from default values.
   $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
-
 
   $form['submit'] = array(
     '#type' => 'submit',

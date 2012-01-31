@@ -5,7 +5,7 @@
  */
 
 /**
- * Implements hook_menu()
+ * Implements hook_menu().
  */
 function bulk_media_upload_menu() {
   $items['admin/content/media/bulk_upload'] = array(
