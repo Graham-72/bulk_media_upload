@@ -18,8 +18,10 @@ fields assigned to the new node.
 INSTALLATION & USAGE
 ------------
 
-1. Install Media, plupload and token. (Dont forget their dependencies!)
-2. Download plupload from plupload.com and copy the files into sites/all/libraries/plupload
-3. Create a nodetype with at least one media asset field
-4. Go to admin/config/media/bulk_media_upload and choose your nodetype and the mediafield
-5. Visit admin/content/media/bulk_upload, fill out the form and start uploading
+1.  Install Media, plupload and token. (Dont forget their dependencies!)
+2.  Download plupload from plupload.com and copy the files into
+    sites/all/libraries/plupload
+3.  Create a nodetype with at least one media asset field
+4.  Go to admin/config/media/bulk_media_upload and choose your nodetype and
+    the mediafield
+5.  Visit admin/content/media/bulk_upload, fill out the form and start uploading
