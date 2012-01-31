@@ -24,10 +24,9 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 
   $form['import_information'] = array(
     '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
-              . '<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
+    . '<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
   );
 
-  // Title field
   $form['title'] = array(
     '#type' => 'textfield',
     '#title' => t('Title'),
@@ -51,8 +50,6 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#click_insert' => TRUE,
   );
 
-
-  // Plupload field for uploading the media files
   $form['upload'] = array(
     '#type' => 'plupload',
     '#title' => t('Bulk Media Upload'),
@@ -64,14 +61,13 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     $form['upload']['#upload_validators']['file_validate_extensions'][] = $mediafield_info['settings']['file_extensions'];
   }
 
-  // Default values for node creation
   $form['default_values'] = array(
     '#type' => 'fieldset',
     '#title' => t('Default Values'),
     '#tree' => TRUE,
   );
 
-  // Create the node creation form to get all assigned fields and add them to the default value fieldset
+  // Create the node creation form to get all assigned fields and add them to the default value fieldset.
   $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
 
   $node = (object) array(
@@ -84,7 +80,7 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 
   field_attach_form('node', $node, $nodeform, $form_state);
 
-  // Delete Media field from default values
+  // Delete Media field from default values.
   $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
 
 
@@ -96,17 +92,17 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 }
 
 /**
- * Implements hook_validate()
+ * Implements hook_validate().
  */
 function bulk_media_upload_upload_form_validate($form, &$form_state) {
 }
 
 /**
- * Implements hook_submit()
+ * Implements hook_submit().
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
 
-  // Prepare the batch process
+  // Prepare the batch process.
   $batch = array(
     'title' => t('Generating Nodes'),
     'error_message' => t('Node generation has encountered an error.'),
@@ -125,7 +121,7 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
  * Internal function for node generation.
  */
 function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context) {
-  // Save media file
+  // Save media file.
   $scheme = variable_get('file_default_scheme', 'public') . '://';
   $source = $tmpfile['tmppath'];
   $destination = file_stream_wrapper_uri_normalize($scheme . $tmpfile['name']);
@@ -135,7 +131,7 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
   file_save($file);
   _media_save_file_permenently($file);
 
-  // Save node
+  // Save node.
   $node = new stdClass();
   $node->type = variable_get('bulk_media_upload_nodetype');
   node_object_prepare($node);
@@ -145,17 +141,17 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
 
   node_save($node);
 
-  // Media field
+  // Media field.
   $mediafield_name = variable_get('bulk_media_upload_mediafield');
   $mediafield_value[LANGUAGE_NONE][0]['fid'] = $file->fid;
   $node->$mediafield_name = $mediafield_value;
 
-  // Default values
+  // Default values.
   field_attach_submit('node', $node, $form['default_values'], $form_state);
 
   node_save($node);
 
-  // Replace tokens in title - this have to be done after node_save
+  // Replace tokens in title - this have to be done after node_save.
   $node->title = token_replace($form_state['values']['title'], array('node' => $node, 'file' => $file));
 
   node_save($node);

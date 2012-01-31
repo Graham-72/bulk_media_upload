@@ -39,12 +39,11 @@ function bulk_media_upload_admin($form, &$form_state) {
   if (isset($form_state['values']['bulk_media_upload_nodetype'])) {
     $nodetype = $form_state['values']['bulk_media_upload_nodetype'];
   }
-  else{
+  else {
     $nodetype = variable_get('bulk_media_upload_nodetype');
   }
 
   if ($nodetype) {
-
     $fields = field_info_instances('node', $nodetype);
     $mediafields = array();
     foreach ($fields as $field) {
@@ -63,7 +62,7 @@ function bulk_media_upload_admin($form, &$form_state) {
         '#options' => $mediafields,
       );
     }
-    else{
+    else {
       $form['mediafield-wrapper']['bulk_media_upload_mediafield_info'] = array(
         '#markup' => '<p>There are no mediafields assigned to nodetype <strong>' . $nodetype . '</strong></p>',
 
@@ -75,7 +74,7 @@ function bulk_media_upload_admin($form, &$form_state) {
 }
 
 /**
- * Implementation of hook_validate();
+ * Implements hook_validate() for bulk_media_upload_admin.
  */
 function bulk_media_upload_admin_validate($form, &$form_state) {
   if ($form_state['submitted']) {
