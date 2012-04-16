@@ -14,7 +14,7 @@ function bulk_media_upload_summary($form, $form_state) {
   $form = array();
   if (!isset($_SESSION['bulk_media_upload_batch_result']['nids'])) {
     $form['info'] = array(
-      '#markup' => '<p>There was no media uploaded in this session.</p>',
+      '#markup' => '<p>' . t('There was no media uploaded in this session.') . '</p>',
     );
     return $form;
   }
@@ -70,7 +70,6 @@ function bulk_media_upload_summary($form, $form_state) {
   $header['operations'] = array('data' => t('Operations'));
 
   $query = db_select('node', 'n')->extend('PagerDefault')->extend('TableSort');
-  /* node_build_filter_query($query); */
 
   $nids = $query
     ->fields('n', array('nid'))

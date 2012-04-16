@@ -23,8 +23,8 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
 
   $form['import_information'] = array(
-    '#markup' => '<p>Nodetype used for generating the nodes: <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
-    . '<p>Mediafield used for uploading your media: <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
+    '#markup' => '<p>' . t('Nodetype used for generating the nodes:') . ' <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
+    . '<p>' . t('Mediafield used for uploading your media:') . ' <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
   );
 
   $form['title'] = array(
