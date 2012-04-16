@@ -44,10 +44,14 @@ function bulk_media_upload_admin($form, &$form_state) {
   }
 
   if ($nodetype) {
+    // Search for supported fields and add them to the dropdown.
     $fields = field_info_instances('node', $nodetype);
+    $supported_modules = array('media', 'image', 'file');
     $mediafields = array();
+    
     foreach ($fields as $field) {
-      if ($field['widget']['type'] == 'media_generic') {
+      $field_infos = field_info_field($field['field_name']);
+      if (in_array($field_infos['module'], $supported_modules)) {
         $mediafields[$field['field_name']] = $field['label'] . ' (' . $field['field_name'] . ')';
       }
     }
@@ -57,14 +61,14 @@ function bulk_media_upload_admin($form, &$form_state) {
         '#type' => 'select',
         '#title' => t('Mediafield'),
         '#default_value' => variable_get('bulk_media_upload_mediafield'),
-        '#description' => t('Select the mediafield which should be filled with the uploaded files'),
+        '#description' => t('Select the field which should be filled with the uploaded files'),
         '#required' => TRUE,
         '#options' => $mediafields,
       );
     }
     else {
       $form['mediafield-wrapper']['bulk_media_upload_mediafield_info'] = array(
-        '#markup' => '<p>There are no mediafields assigned to nodetype <strong>' . $nodetype . '</strong></p>',
+        '#markup' => '<p>There are no supported fields (' . implode(', ', $supported_modules) . ') assigned to nodetype <strong>' . $nodetype . '</strong></p>',
 
       );
     }

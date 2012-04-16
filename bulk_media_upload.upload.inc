@@ -86,6 +86,7 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     '#type' => 'submit',
     '#value' => t('Generate Nodes'),
   );
+
   return $form;
 }
 
@@ -99,6 +100,24 @@ function bulk_media_upload_upload_form_validate($form, &$form_state) {
  * Implements hook_submit().
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
+  
+  // Create new taxonomy terms
+  $fields = field_info_instances('node', variable_get('bulk_media_upload_nodetype'));
+  foreach ($fields as $field) {
+    $fieldinfo = field_info_field($field['field_name']);
+    if($fieldinfo['module'] == 'taxonomy'){
+      foreach ($form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE] as $key => $term) {
+        if($term['tid'] == 'autocreate'){
+          // Create term.
+          $term = (object) $term;
+          unset($term->tid);
+          taxonomy_term_save($term);
+          $form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE][$key] = (array) $term;
+        }
+      }
+      
+    }
+  }
 
   // Prepare the batch process.
   $batch = array(
@@ -129,7 +148,7 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
   file_save($file);
   _media_save_file_permenently($file);
 
-  // Save node.
+  // Save the node.
   $node = new stdClass();
   $node->type = variable_get('bulk_media_upload_nodetype');
   node_object_prepare($node);
@@ -139,10 +158,22 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
 
   node_save($node);
 
-  // Media field.
+  // Create the media field.
   $mediafield_name = variable_get('bulk_media_upload_mediafield');
-  $mediafield_value[LANGUAGE_NONE][0]['fid'] = $file->fid;
-  $node->$mediafield_name = $mediafield_value;
+  
+  $fieldinfo = field_info_field($mediafield_name);
+  $filefields = array('image', 'file');
+
+  $settings = array();
+  $settings['fid'] = $file->fid;
+
+  // Additional values for filefield (and imagefield).
+  if(in_array($fieldinfo['module'], $filefields)){
+    $settings['display'] = 1;
+    $settings['description'] = '';
+  };
+
+  $node->$mediafield_name = array(LANGUAGE_NONE => array(0 => $settings));
 
   // Default values.
   field_attach_submit('node', $node, $form['default_values'], $form_state);
