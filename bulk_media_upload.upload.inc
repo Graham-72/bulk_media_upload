@@ -138,15 +138,33 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
  * Internal function for node generation.
  */
 function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context) {
+  $mediafield_name = variable_get('bulk_media_upload_mediafield');
+  $nodetype = variable_get('bulk_media_upload_nodetype');
+  $mediafield_info = field_info_instance('node', $mediafield_name, $nodetype);
+
   // Save media file.
   $scheme = variable_get('file_default_scheme', 'public') . '://';
   $source = $tmpfile['tmppath'];
-  $destination = file_stream_wrapper_uri_normalize($scheme . $tmpfile['name']);
+
+  $directory = '';
+  if(isset($mediafield_info['settings']['file_directory'])){
+    $directory .= token_replace($mediafield_info['settings']['file_directory']) . '/';
+
+    // If the directory isn't writable, or doesn't exist and can't be created,
+    // the upload will fail.
+    $prepare_directory = file_stream_wrapper_uri_normalize($scheme . $directory);
+    if (!file_prepare_directory($prepare_directory, FILE_CREATE_DIRECTORY)) {
+      drupal_set_message(t('The file directory @dir does not exist or is not writable. Please contact an administrator.', array('@dir' => $prepare_directory)), 'error');
+      return;
+    }
+  }
+
+  $destination = file_stream_wrapper_uri_normalize($scheme . $directory . $tmpfile['name']);
   $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
 
   $file = file_uri_to_object($destination);
+  $file->status = FILE_STATUS_PERMANENT;
   file_save($file);
-  _media_save_file_permenently($file);
 
   // Save the node.
   $node = new stdClass();
@@ -159,8 +177,6 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
   node_save($node);
 
   // Create the media field.
-  $mediafield_name = variable_get('bulk_media_upload_mediafield');
-  
   $fieldinfo = field_info_field($mediafield_name);
   $filefields = array('image', 'file');
 
