@@ -138,6 +138,8 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
  * Internal function for node generation.
  */
 function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context) {
+  global $user;
+
   $mediafield_name = variable_get('bulk_media_upload_mediafield');
   $nodetype = variable_get('bulk_media_upload_nodetype');
   $mediafield_info = field_info_instance('node', $mediafield_name, $nodetype);
@@ -162,7 +164,18 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
   $destination = file_stream_wrapper_uri_normalize($scheme . $directory . $tmpfile['name']);
   $destination = file_unmanaged_move($source, $destination, FILE_EXISTS_RENAME);
 
-  $file = file_uri_to_object($destination);
+  // Create the file object.
+  $uri = file_stream_wrapper_uri_normalize($destination);
+  $wrapper = file_stream_wrapper_get_instance_by_uri($uri);
+  $file = new StdClass;
+  $file->uid = $user->uid;
+  $file->filename = basename($uri);
+  $file->uri = $uri;
+  $file->filemime = file_get_mimetype($uri);
+  $file->filesize = @filesize($uri);
+  $file->timestamp = REQUEST_TIME;
+  $file->status = FILE_STATUS_PERMANENT;
+  $file->is_new = TRUE;
   $file->status = FILE_STATUS_PERMANENT;
   file_save($file);
 
