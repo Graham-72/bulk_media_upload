@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Upload form and node generation functions
+ * Upload form and entity generation functions.
  *
  */
 
@@ -11,19 +11,20 @@
 function bulk_media_upload_upload_form($form, &$form_state) {
   global $language;
 
-  $nodetype = variable_get('bulk_media_upload_nodetype');
+  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_info = entity_get_info($entity_type);
+  $bundle = variable_get('bulk_media_upload_bundle');
   $mediafield = variable_get('bulk_media_upload_mediafield');
 
-  if (empty($nodetype) || empty($mediafield)) {
+  if (empty($entity_type) || empty($bundle) || empty($mediafield)) {
     drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l(t('configuration page'), 'admin/config/media/bulk_media_upload') . ' and fix this!'), 'error');
     return $form;
   }
 
-  $nodetype_info = node_type_load($nodetype);
-  $mediafield_info = field_info_instance('node', $mediafield, $nodetype);
+  $mediafield_info = field_info_instance($entity_type, $mediafield, $bundle);
 
   $form['import_information'] = array(
-    '#markup' => '<p>' . t('Nodetype used for generating the nodes:') . ' <strong>' . $nodetype_info->name . ' (' . $nodetype_info->type . ')</strong></p>'
+    '#markup' => '<p>' . t('Bundle used for generating the entities:') . ' <strong>' . $entity_info['bundles'][$bundle]['label'] . ' (' . $bundle . ')</strong></p>'
     . '<p>' . t('Mediafield used for uploading your media:') . ' <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
   );
 
@@ -45,7 +46,7 @@ function bulk_media_upload_upload_form($form, &$form_state) {
 
   $form['token_help']['help'] = array(
     '#theme' => 'token_tree',
-    '#token_types' => array('node', 'file'),
+    '#token_types' => array($entity_type, 'file'),
     '#global_types' => TRUE,
     '#click_insert' => TRUE,
   );
@@ -61,30 +62,29 @@ function bulk_media_upload_upload_form($form, &$form_state) {
     $form['upload']['#upload_validators']['file_validate_extensions'][] = $mediafield_info['settings']['file_extensions'];
   }
 
-  $form['default_values'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Default Values'),
-    '#tree' => TRUE,
-  );
+  // Use the entity creation form to extract all assigned fields.
+  $allowed_fields = array_diff_key(field_info_instances($entity_type, $bundle), array($mediafield => NULL));
 
-  // Use the node creation form to extract all assigned fields.
-  $allowed_fields = array_diff_key(field_info_instances('node', $nodetype), array($mediafield => NULL));
+  // Create the new entity.
+  $entity = entity_create($entity_type, array(
+    $entity_info['entity keys']['bundle'] => $bundle,
+  ));
 
-  $node = (object) array(
-    'uid' => 1,
-    'name' => '',
-    'type' => $nodetype,
-    'language' => LANGUAGE_NONE,
-  );
-  $nodeform = array();
+  $entity_form = array();
 
-  // And add these fields to the default value fieldset without the media field.
-  field_attach_form('node', $node, $nodeform, $form_state);
-  $form['default_values'] = array_merge($form['default_values'], array_intersect_key($nodeform, $allowed_fields));
+  // And add these fields, if any, to a default value fieldset without the media field.
+  field_attach_form($entity_type, $entity, $entity_form, $form_state);
+  if ($additions = array_intersect_key($entity_form, $allowed_fields)) {
+    $form['default_values'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Default Values'),
+      '#tree' => TRUE,
+    ) + $additions;
+  }
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Generate Nodes'),
+    '#value' => t('Generate @entity_type entities', array('@entity_type' => $entity_info['label'])),
   );
 
   return $form;
@@ -100,49 +100,56 @@ function bulk_media_upload_upload_form_validate($form, &$form_state) {
  * Implements hook_submit().
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
-  
+  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_info = entity_get_info($entity_type);
+
   // Create new taxonomy terms
-  $fields = field_info_instances('node', variable_get('bulk_media_upload_nodetype'));
-  foreach ($fields as $field) {
-    $fieldinfo = field_info_field($field['field_name']);
-    if($fieldinfo['module'] == 'taxonomy'){
-      foreach ($form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE] as $key => $term) {
-        if($term['tid'] == 'autocreate'){
-          // Create term.
-          $term = (object) $term;
-          unset($term->tid);
-          taxonomy_term_save($term);
-          $form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE][$key] = (array) $term;
+  if (isset($form['default_values'])) {
+    $fields = field_info_instances(variable_get('bulk_media_upload_entity_type'), variable_get('bulk_media_upload_bundle'));
+    foreach ($fields as $field) {
+      $fieldinfo = field_info_field($field['field_name']);
+      if($fieldinfo['module'] == 'taxonomy'){
+        foreach ($form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE] as $key => $term) {
+          if($term['tid'] == 'autocreate'){
+            // Create term.
+            $term = (object) $term;
+            unset($term->tid);
+            taxonomy_term_save($term);
+            $form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE][$key] = (array) $term;
+          }
         }
       }
-      
     }
   }
 
   // Prepare the batch process.
+  $placeholders = array('@entity_type' => $entity_info['label']);
   $batch = array(
-    'title' => t('Generating Nodes'),
-    'error_message' => t('Node generation has encountered an error.'),
+    'title' => t('Generating @entity_type entities', $placeholders),
+    'error_message' => t('@entity_type generation has encountered an error.', $placeholders),
     'finished' => '_bulk_media_upload_batch_finished',
     'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload.upload.inc',
   );
 
   foreach ($form_state['values']['upload'] as $tmpfile) {
-    $batch['operations'][] = array('_bulk_media_upload_generate_node', array($tmpfile, $form, $form_state));
+    $batch['operations'][] = array('_bulk_media_upload_generate_entity', array($tmpfile, $form, $form_state));
   }
 
   batch_set($batch);
 }
 
 /**
- * Internal function for node generation.
+ * Internal function for entity generation.
  */
-function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$context) {
+function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$context) {
   global $user;
-
+  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_info = entity_get_info($entity_type);
+  // Default label field to 'name'.
+  $label_field = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
   $mediafield_name = variable_get('bulk_media_upload_mediafield');
-  $nodetype = variable_get('bulk_media_upload_nodetype');
-  $mediafield_info = field_info_instance('node', $mediafield_name, $nodetype);
+  $bundle = variable_get('bulk_media_upload_bundle');
+  $mediafield_info = field_info_instance($entity_type, $mediafield_name, $bundle);
 
   // Save media file.
   $scheme = variable_get('file_default_scheme', 'public') . '://';
@@ -179,15 +186,29 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
   $file->status = FILE_STATUS_PERMANENT;
   file_save($file);
 
-  // Save the node.
-  $node = new stdClass();
-  $node->type = variable_get('bulk_media_upload_nodetype');
-  node_object_prepare($node);
+  // Create the new entity.
+  $entity = entity_create($entity_type, array(
+    $entity_info['entity keys']['bundle'] => $bundle,
+    $label_field => $file->filename,
+  ));
 
-  $node->title    = $file->filename;
-  $node->language = LANGUAGE_NONE;
-
-  node_save($node);
+  // Taxonomy terms need to have their vocabulary ID added.
+  // See http://drupal.org/node/1409256.
+  if ($entity_type == 'taxonomy_term') {
+    if ($vocabulary = taxonomy_vocabulary_machine_name_load($entity->vocabulary_machine_name)) {
+      $entity->vid = $vocabulary->vid;
+    }
+  }
+  // If the entity has a property tied to UID, set it so that, e.g., nodes will
+  // be assigned an author.
+  $info = entity_get_property_info($entity_type);
+  foreach ($info['properties'] as $property) {
+    if (isset($property['schema field']) && $property['schema field'] == 'uid') {
+      $entity->uid = $user->uid;
+      break;
+    }
+  }
+  entity_save($entity_type, $entity);
 
   // Create the media field.
   $fieldinfo = field_info_field($mediafield_name);
@@ -202,27 +223,36 @@ function _bulk_media_upload_generate_node($tmpfile, $form, $form_state, &$contex
     $settings['description'] = '';
   };
 
-  $node->$mediafield_name = array(LANGUAGE_NONE => array(0 => $settings));
+  $entity->$mediafield_name = array(LANGUAGE_NONE => array(0 => $settings));
 
   // Default values.
-  field_attach_submit('node', $node, $form['default_values'], $form_state);
+  if (isset($form['default_values'])) {
+    field_attach_submit($entity_type, $entity, $form['default_values'], $form_state);
+  }
 
-  node_save($node);
+  entity_save($entity_type, $entity);
 
-  // Replace tokens in title - this have to be done after node_save.
-  $node->title = token_replace($form_state['values']['title'], array('node' => $node, 'file' => $file));
+  // Replace tokens in title - this has to be done after entity_save.
+  $label = token_replace($form_state['values']['title'], array($entity_type => $entity, 'file' => $file));
 
-  node_save($node);
+  $entity->$label_field = $label;
+
+  entity_save($entity_type, $entity);
 
   $context['message'] = t('Importing: @filename', array('@filename' => $file->filename));
-  $context['results']['nids'][] = $node->nid;
+  $context['results']['ids'][] = $entity->$entity_info['entity keys']['id'];
 }
 
 /**
  * Finished function for batch
  */
 function _bulk_media_upload_batch_finished($success, $results, $operations) {
-  drupal_set_message(t('Node generation completed'));
+  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_info = entity_get_info($entity_type);
+  drupal_set_message(t('@entity_type generation completed.', array('@entity_type' => $entity_info['label'])));
   $_SESSION['bulk_media_upload_batch_result'] = $results;
-  drupal_goto('admin/content/media/bulk_upload/summary');
+  // TODO: do landing pages for other entity types?
+  if ($entity_type == 'node') {
+    drupal_goto('admin/content/media/bulk_upload/summary');
+  }
 }

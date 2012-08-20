@@ -12,7 +12,7 @@ function bulk_media_upload_summary($form, $form_state) {
   module_load_include('inc', 'node', 'node.admin');
 
   $form = array();
-  if (!isset($_SESSION['bulk_media_upload_batch_result']['nids'])) {
+  if (!isset($_SESSION['bulk_media_upload_batch_result']['ids'])) {
     $form['info'] = array(
       '#markup' => '<p>' . t('There was no media uploaded in this session.') . '</p>',
     );
@@ -73,7 +73,7 @@ function bulk_media_upload_summary($form, $form_state) {
 
   $nids = $query
     ->fields('n', array('nid'))
-    ->condition('n.nid', $_SESSION['bulk_media_upload_batch_result']['nids'], 'IN')
+    ->condition('n.nid', $_SESSION['bulk_media_upload_batch_result']['ids'], 'IN')
     ->limit(50)
     ->orderByHeader($header)
     ->execute()

@@ -11,41 +11,85 @@
 function bulk_media_upload_admin($form, &$form_state) {
   $form = array();
 
-  $nodetypes = array();
-  foreach (node_type_get_types() as $type) {
-    $nodetypes[$type->type] = $type->name;
+  $entity_types = entity_get_info();
+  $options = array();
+
+  foreach ($entity_types as $entity_type => $entity_info) {
+    if ($entity_info['fieldable'] && entity_type_supports($entity_type, 'save')) {
+      $types[$entity_type] = $entity_info['label'];
+    }
   }
 
-  $form['bulk_media_upload_nodetype'] = array(
+  if (isset($form_state['values']['bulk_media_upload_entity_type'])) {
+    $selected_entity_type = $form_state['values']['bulk_media_upload_entity_type'];
+  }
+  else {
+    $selected_entity_type = variable_get('bulk_media_upload_entity_type');
+  }
+
+  $form['bulk_media_upload_entity_type'] = array(
     '#type' => 'select',
-    '#title' => t('Nodetype'),
-    '#default_value' => variable_get('bulk_media_upload_nodetype'),
-    '#description' => t('Which Nodetype should be generated'),
+    '#title' => t('Entity type'),
+    '#default_value' => $selected_entity_type,
+    '#description' => t('Which entity type should be generated?'),
     '#required' => TRUE,
-    '#options' => $nodetypes,
+    '#options' => $types,
     '#ajax' => array(
       'callback' => 'bulk_media_upload_admin_ajax',
-      'wrapper' => 'mediaelement-div',
+      'wrapper' => 'bundle-div',
       'method' => 'replace',
       'effect' => 'fade',
     ),
   );
 
-  $form['mediafield-wrapper'] = array(
+  $form['bundle-wrapper'] = array(
+    '#prefix' => '<div id="bundle-div">',
+    '#suffix' => '</div>',
+  );
+
+  if ($selected_entity_type) {
+    $bundles = array();
+    foreach ($entity_types[$selected_entity_type]['bundles'] as $bundle_name => $bundle_info) {
+      $bundles[$bundle_name] = check_plain($bundle_info['label']);
+    }
+
+    if (isset($form_state['values']['bulk_media_upload_bundle'])) {
+      $selected_bundle = $form_state['values']['bulk_media_upload_bundle'];
+    }
+    else {
+      $selected_bundle = variable_get('bulk_media_upload_bundle');
+    }
+
+    // If we have stale data from a previous save, use the first available
+    // value.
+    if (!isset($bundles[$selected_bundle])) {
+      $selected_bundle = key(reset($bundles));
+    }
+
+    $form['bundle-wrapper']['bulk_media_upload_bundle'] = array(
+      '#type' => 'select',
+      '#title' => t('Bundle'),
+      '#default_value' => $selected_bundle,
+      '#description' => t('Which bundle should be generated?'),
+      '#required' => $selected_entity_type ? TRUE : FALSE,
+      '#options' => $bundles,
+      '#ajax' => array(
+        'callback' => 'bulk_media_upload_admin_ajax',
+        'wrapper' => 'mediaelement-div',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+    );
+  }
+
+  $form['bundle-wrapper']['mediafield-wrapper'] = array(
     '#prefix' => '<div id="mediaelement-div">',
     '#suffix' => '</div>',
   );
 
-  if (isset($form_state['values']['bulk_media_upload_nodetype'])) {
-    $nodetype = $form_state['values']['bulk_media_upload_nodetype'];
-  }
-  else {
-    $nodetype = variable_get('bulk_media_upload_nodetype');
-  }
-
-  if ($nodetype) {
+  if ($selected_entity_type && $selected_bundle) {
     // Search for supported fields and add them to the dropdown.
-    $fields = field_info_instances('node', $nodetype);
+    $fields = field_info_instances($selected_entity_type, $selected_bundle);
     $supported_modules = array('media', 'image', 'file');
     $mediafields = array();
     
@@ -57,7 +101,7 @@ function bulk_media_upload_admin($form, &$form_state) {
     }
 
     if (count($mediafields) > 0) {
-      $form['mediafield-wrapper']['bulk_media_upload_mediafield'] = array(
+      $form['bundle-wrapper']['mediafield-wrapper']['bulk_media_upload_mediafield'] = array(
         '#type' => 'select',
         '#title' => t('Mediafield'),
         '#default_value' => variable_get('bulk_media_upload_mediafield'),
@@ -67,9 +111,8 @@ function bulk_media_upload_admin($form, &$form_state) {
       );
     }
     else {
-      $form['mediafield-wrapper']['bulk_media_upload_mediafield_info'] = array(
-        '#markup' => '<p>There are no supported fields (' . implode(', ', $supported_modules) . ') assigned to nodetype <strong>' . $nodetype . '</strong></p>',
-
+      $form['bundle-wrapper']['mediafield-wrapper']['bulk_media_upload_mediafield_info'] = array(
+        '#markup' => '<p>' . t('There are no supported fields (@fields) assigned to bundle <strong>@bundle.</strong>', array('@fields' => implode(', ', $supported_modules), '@bundle' => $selected_bundle)) . '</p>',
       );
     }
   }
@@ -82,8 +125,10 @@ function bulk_media_upload_admin($form, &$form_state) {
  */
 function bulk_media_upload_admin_validate($form, &$form_state) {
   if ($form_state['submitted']) {
-    if (!isset($form_state['values']['bulk_media_upload_mediafield']) || $form_state['values']['bulk_media_upload_mediafield'] == '') {
-      form_set_error('', t('You must select a mediafield'));
+    foreach (array('bulk_media_upload_bundle' => t('bundle'), 'bulk_media_upload_mediafield' => t('media field')) as $setting => $label) {
+      if (!isset($form_state['values'][$setting]) || $form_state['values'][$setting] == '') {
+        form_set_error('', t('You must select a !label.', array('!label' => $label)));
+      }
     }
   }
 }
@@ -92,5 +137,10 @@ function bulk_media_upload_admin_validate($form, &$form_state) {
  * Returns media field wrapper for ajax request
  */
 function bulk_media_upload_admin_ajax($form, $form_state) {
-  return $form['mediafield-wrapper'];
+  switch (end($form_state['triggering_element']['#parents'])) {
+    case 'bulk_media_upload_entity_type':
+      return $form['bundle-wrapper'];
+    case 'bulk_media_upload_bundle':
+      return $form['bundle-wrapper']['mediafield-wrapper'];
+  }
 }
