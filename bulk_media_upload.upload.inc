@@ -17,15 +17,15 @@ function bulk_media_upload_upload_form($form, &$form_state) {
   $mediafield = variable_get('bulk_media_upload_mediafield');
 
   if (empty($entity_type) || empty($bundle) || empty($mediafield)) {
-    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the ' . l(t('configuration page'), 'admin/config/media/bulk_media_upload') . ' and fix this!'), 'error');
+    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the <a href="@admin-url">configuration page</a> to fix this.', array('@admin-url' => url('admin/config/media/bulk_media_upload'))), 'error');
     return $form;
   }
 
   $mediafield_info = field_info_instance($entity_type, $mediafield, $bundle);
 
   $form['import_information'] = array(
-    '#markup' => '<p>' . t('Bundle used for generating the entities:') . ' <strong>' . $entity_info['bundles'][$bundle]['label'] . ' (' . $bundle . ')</strong></p>'
-    . '<p>' . t('Mediafield used for uploading your media:') . ' <strong>' . $mediafield_info['label'] . ' (' . $mediafield_info['field_name'] . ')</strong></p>',
+    '#markup' => '<p>' . t('Bundle used for generating the entities: <strong>@bundle_label (@bundle_name)</strong>', array('@bundle_label' => $entity_info['bundles'][$bundle]['label'], '@bundle_name' => $bundle)) . '</p>'
+    . '<p>' . t('Mediafield used for uploading your media: <strong>@field_label (@field_name)</strong>', array('@field_label' => $mediafield_info['label'], '@field_name' => $mediafield_info['field_name'])) . '</p>',
   );
 
   $form['title'] = array(
