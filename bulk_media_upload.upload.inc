@@ -233,7 +233,7 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   entity_save($entity_type, $entity);
 
   // Replace tokens in title - this has to be done after entity_save.
-  $label = token_replace($form_state['values']['title'], array($entity_type => $entity, 'file' => $file));
+  $label = token_replace($form_state['values']['title'], array($entity_type => $entity, 'file' => $file), array('clear' => TRUE));
 
   $entity->$label_field = $label;
 
