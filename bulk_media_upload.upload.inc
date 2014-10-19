@@ -253,6 +253,6 @@ function _bulk_media_upload_batch_finished($success, $results, $operations) {
   $_SESSION['bulk_media_upload_batch_result'] = $results;
   // TODO: do landing pages for other entity types?
   if ($entity_type == 'node') {
-    drupal_goto('admin/content/media/bulk_upload/summary');
+    drupal_goto(variable_get('bulk_media_upload_redirect_path', 'admin/content/file/bulk_upload/summary'));
   }
 }
