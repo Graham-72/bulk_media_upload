@@ -1,0 +1,13 @@
+/**
+* Move settings from variables to config.
+*/
+function bulk_media_upload_update_1000()
+{
+// Migrate variables to config.
+$config = config('bulk_media_upload.settings');
+$config->set('bulk_media_upload_entity_type', update_variable_get('bulk_media_upload_entity_type', ''));
+$config->set('bulk_media_upload_bundle', update_variable_get('bulk_media_upload_bundle', ''));
+$config->set('bulk_media_upload_mediafield', update_variable_get('bulk_media_upload_mediafield', ''));
+$config->set('bulk_media_upload_redirect_path', update_variable_get('bulk_media_upload_redirect_path', ''));
+$config->save();
+}

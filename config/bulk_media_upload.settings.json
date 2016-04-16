@@ -1,0 +1,7 @@
+{
+  "_config_name": "bulk_media_upload.settings",
+    "bulk_media_upload_entity_type": "",
+    "bulk_media_upload_bundle": "",
+    "bulk_media_upload_mediafield": "",
+    "bulk_media_upload_redirect_path": "admin/content/file/bulk_upload/summary"
+  }

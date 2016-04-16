@@ -10,7 +10,7 @@
 function bulk_media_upload_menu() {
   $items['admin/content/file/bulk_upload'] = array(
     'title' => 'Bulk Upload',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('bulk_media_upload_upload_form'),
     'access arguments' => array('bulk upload media'),
     'file' => 'bulk_media_upload.upload.inc',
@@ -19,7 +19,7 @@ function bulk_media_upload_menu() {
 
   $items['admin/content/file/bulk_upload/summary'] = array(
     'title' => 'Bulk Upload Summary',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('bulk_media_upload_summary'),
     'access arguments' => array('bulk upload media'),
     'type' => MENU_LOCAL_ACTION,
@@ -28,7 +28,7 @@ function bulk_media_upload_menu() {
 
   $items['admin/config/media/bulk_media_upload'] = array(
     'title' => 'Bulk Media Upload Settings',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'backdrop_get_form',
     'page arguments' => array('bulk_media_upload_admin'),
     'access arguments' => array('administer bulk media upload'),
     'type' => MENU_NORMAL_ITEM,
@@ -64,3 +64,17 @@ function bulk_media_upload_help($path, $arg) {
   }
   return '';
 }
+
+
+/**
+ * Implements hook_config_info().
+ */
+function bulk_media_upload_config_info()
+{
+  $prefixes['bulk_media_upload.settings'] = array(
+    'label' => t('Bulk Media Upload'),
+    'group' => t('Configuration'),
+  );
+  return $prefixes;
+}
+

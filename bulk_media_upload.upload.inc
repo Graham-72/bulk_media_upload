@@ -11,13 +11,13 @@
 function bulk_media_upload_upload_form($form, &$form_state) {
   global $language;
 
-  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
   $entity_info = entity_get_info($entity_type);
-  $bundle = variable_get('bulk_media_upload_bundle');
-  $mediafield = variable_get('bulk_media_upload_mediafield');
+  $bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
+  $mediafield = config_get('bulk_media_upload.settings','bulk_media_upload_mediafield');
 
   if (empty($entity_type) || empty($bundle) || empty($mediafield)) {
-    drupal_set_message(t('You have not configured the Bulk Media Upload module. Go to the <a href="@admin-url">configuration page</a> to fix this.', array('@admin-url' => url('admin/config/media/bulk_media_upload'))), 'error');
+    backdrop_set_message(t('You have not configured the Bulk Media Upload module. Go to the <a href="@admin-url">configuration page</a> to fix this.', array('@admin-url' => url('admin/config/media/bulk_media_upload'))), 'error');
     return $form;
   }
 
@@ -100,12 +100,12 @@ function bulk_media_upload_upload_form_validate($form, &$form_state) {
  * Implements hook_submit().
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
-  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
   $entity_info = entity_get_info($entity_type);
 
   // Create new taxonomy terms
   if (isset($form['default_values'])) {
-    $fields = field_info_instances(variable_get('bulk_media_upload_entity_type'), variable_get('bulk_media_upload_bundle'));
+    $fields = field_info_instances(config_get('bulk_media_upload.settings','bulk_media_upload_entity_type'), config_get('bulk_media_upload.settings','bulk_media_upload_bundle'));
     foreach ($fields as $field) {
       $fieldinfo = field_info_field($field['field_name']);
       if($fieldinfo['module'] == 'taxonomy'){
@@ -128,7 +128,7 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
     'title' => t('Generating @entity_type entities', $placeholders),
     'error_message' => t('@entity_type generation has encountered an error.', $placeholders),
     'finished' => '_bulk_media_upload_batch_finished',
-    'file' => drupal_get_path('module', 'bulk_media_upload') . '/bulk_media_upload.upload.inc',
+    'file' => backdrop_get_path('module', 'bulk_media_upload') . '/bulk_media_upload.upload.inc',
   );
 
   foreach ($form_state['values']['upload'] as $tmpfile) {
@@ -143,16 +143,16 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
  */
 function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$context) {
   global $user;
-  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
   $entity_info = entity_get_info($entity_type);
   // Default label field to 'name'.
   $label_field = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
-  $mediafield_name = variable_get('bulk_media_upload_mediafield');
-  $bundle = variable_get('bulk_media_upload_bundle');
+  $mediafield_name = config_get('bulk_media_upload.settings','bulk_media_upload_mediafield');
+  $bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
   $mediafield_info = field_info_instance($entity_type, $mediafield_name, $bundle);
 
   // Save media file.
-  $scheme = variable_get('file_default_scheme', 'public') . '://';
+  $scheme = config_get('bulk_media_upload.settings','file_default_scheme', 'public') . '://';
   $source = $tmpfile['tmppath'];
 
   $directory = '';
@@ -163,7 +163,7 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
     // the upload will fail.
     $prepare_directory = file_stream_wrapper_uri_normalize($scheme . $directory);
     if (!file_prepare_directory($prepare_directory, FILE_CREATE_DIRECTORY)) {
-      drupal_set_message(t('The file directory @dir does not exist or is not writable. Please contact an administrator.', array('@dir' => $prepare_directory)), 'error');
+      backdrop_set_message(t('The file directory @dir does not exist or is not writable. Please contact an administrator.', array('@dir' => $prepare_directory)), 'error');
       return;
     }
   }
@@ -247,12 +247,12 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
  * Finished function for batch
  */
 function _bulk_media_upload_batch_finished($success, $results, $operations) {
-  $entity_type = variable_get('bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
   $entity_info = entity_get_info($entity_type);
-  drupal_set_message(t('@entity_type generation completed.', array('@entity_type' => $entity_info['label'])));
+  backdrop_set_message(t('@entity_type generation completed.', array('@entity_type' => $entity_info['label'])));
   $_SESSION['bulk_media_upload_batch_result'] = $results;
   // TODO: do landing pages for other entity types?
   if ($entity_type == 'node') {
-    drupal_goto(variable_get('bulk_media_upload_redirect_path', 'admin/content/file/bulk_upload/summary'));
+    backdrop_goto(config_get('bulk_media_upload.settings','bulk_media_upload_redirect_path'));
   }
 }

@@ -24,7 +24,7 @@ function bulk_media_upload_admin($form, &$form_state) {
     $selected_entity_type = $form_state['values']['bulk_media_upload_entity_type'];
   }
   else {
-    $selected_entity_type = variable_get('bulk_media_upload_entity_type');
+    $selected_entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
   }
 
   $form['bulk_media_upload_entity_type'] = array(
@@ -57,7 +57,7 @@ function bulk_media_upload_admin($form, &$form_state) {
       $selected_bundle = $form_state['values']['bulk_media_upload_bundle'];
     }
     else {
-      $selected_bundle = variable_get('bulk_media_upload_bundle');
+      $selected_bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
     }
 
     // If we have stale data from a previous save, use the first available
@@ -104,7 +104,7 @@ function bulk_media_upload_admin($form, &$form_state) {
       $form['bundle-wrapper']['mediafield-wrapper']['bulk_media_upload_mediafield'] = array(
         '#type' => 'select',
         '#title' => t('Mediafield'),
-        '#default_value' => variable_get('bulk_media_upload_mediafield'),
+        '#default_value' => config_get('bulk_media_upload.settings','bulk_media_upload_mediafield'),
         '#description' => t('Select the field which should be filled with the uploaded files'),
         '#required' => TRUE,
         '#options' => $mediafields,
@@ -120,13 +120,18 @@ function bulk_media_upload_admin($form, &$form_state) {
   $form['bulk_media_upload_redirect_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Redirect path'),
-    '#default_value' => variable_get('bulk_media_upload_redirect_path', 'admin/content/file/bulk_upload/summary'),
+    '#default_value' => config_get('bulk_media_upload.settings','bulk_media_upload_redirect_path'),
     '#description' => t('Where to redirect after bulk media upload is finished'),
     '#required' => TRUE,
     '#size' => 50,
   );
 
-  return system_settings_form($form);
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Update'),
+  );
+
+  return $form;
 }
 
 /**

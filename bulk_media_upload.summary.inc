@@ -82,7 +82,7 @@ function bulk_media_upload_summary($form, $form_state) {
 
   // Prepare the list of nodes.
   $languages = language_list();
-  $destination = drupal_get_destination();
+  $destination = backdrop_get_destination();
   $options = array();
   foreach ($nodes as $node) {
     $l_options = $node->language != LANGUAGE_NONE && isset($languages[$node->language]) ? array('language' => $languages[$node->language]) : array();
@@ -245,7 +245,7 @@ function bulk_media_upload_summary_node_multiple_delete_confirm_submit($form, &$
     node_delete_multiple(array_keys($form_state['values']['nodes']));
     $count = count($form_state['values']['nodes']);
     watchdog('content', 'Deleted @count posts.', array('@count' => $count));
-    drupal_set_message(format_plural($count, 'Deleted 1 post.', 'Deleted @count posts.'));
+    backdrop_set_message(format_plural($count, 'Deleted 1 post.', 'Deleted @count posts.'));
   }
   $form_state['redirect'] = 'admin/content/media/bulk_upload/summary';
 }
