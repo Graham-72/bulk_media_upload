@@ -15,7 +15,7 @@ function bulk_media_upload_admin($form, &$form_state) {
   $options = array();
 
   foreach ($entity_types as $entity_type => $entity_info) {
-    if ($entity_info['fieldable'] && entity_type_supports($entity_type, 'save')) {
+    if ($entity_info['fieldable']) {
       $types[$entity_type] = $entity_info['label'];
     }
   }
@@ -24,7 +24,7 @@ function bulk_media_upload_admin($form, &$form_state) {
     $selected_entity_type = $form_state['values']['bulk_media_upload_entity_type'];
   }
   else {
-    $selected_entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
+    $selected_entity_type = config_get('bulk_media_upload.settings','entity_type');
   }
 
   $form['bulk_media_upload_entity_type'] = array(
@@ -57,13 +57,15 @@ function bulk_media_upload_admin($form, &$form_state) {
       $selected_bundle = $form_state['values']['bulk_media_upload_bundle'];
     }
     else {
-      $selected_bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
+      $selected_bundle = config_get('bulk_media_upload.settings','bundle');
     }
 
     // If we have stale data from a previous save, use the first available
     // value.
     if (!isset($bundles[$selected_bundle])) {
-      $selected_bundle = key(reset($bundles));
+    //$selected_bundle = key(reset($bundles));
+      foreach($bundles as $selected_bundle => $bundle)
+        break;
     }
 
     $form['bundle-wrapper']['bulk_media_upload_bundle'] = array(
@@ -104,7 +106,7 @@ function bulk_media_upload_admin($form, &$form_state) {
       $form['bundle-wrapper']['mediafield-wrapper']['bulk_media_upload_mediafield'] = array(
         '#type' => 'select',
         '#title' => t('Mediafield'),
-        '#default_value' => config_get('bulk_media_upload.settings','bulk_media_upload_mediafield'),
+        '#default_value' => config_get('bulk_media_upload.settings','mediafield'),
         '#description' => t('Select the field which should be filled with the uploaded files'),
         '#required' => TRUE,
         '#options' => $mediafields,
@@ -120,7 +122,7 @@ function bulk_media_upload_admin($form, &$form_state) {
   $form['bulk_media_upload_redirect_path'] = array(
     '#type' => 'textfield',
     '#title' => t('Redirect path'),
-    '#default_value' => config_get('bulk_media_upload.settings','bulk_media_upload_redirect_path'),
+    '#default_value' => config_get('bulk_media_upload.settings','redirect_path'),
     '#description' => t('Where to redirect after bulk media upload is finished'),
     '#required' => TRUE,
     '#size' => 50,
@@ -128,9 +130,9 @@ function bulk_media_upload_admin($form, &$form_state) {
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Update'),
+    '#value' => t('Save configuration'),
   );
-
+  $form['#submit'][] = 'bulk_media_upload_admin_submit';
   return $form;
 }
 
@@ -145,6 +147,19 @@ function bulk_media_upload_admin_validate($form, &$form_state) {
       }
     }
   }
+}
+
+/**
+ * Implements hook_submit().
+ */
+function bulk_media_upload_admin_submit($form, &$form_state) {
+  $config = config('bulk_media_upload.settings');
+  foreach($form_state['values'] as $key => $value) {
+    if (strpos($key, 'bulk_media_upload_') === 0) {
+      $config->set(substr($key, 18), $value);
+    }
+  }
+  $config->save();
 }
 
 /**
