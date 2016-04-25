@@ -11,10 +11,10 @@
 function bulk_media_upload_upload_form($form, &$form_state) {
   global $language;
 
-  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','entity_type');
   $entity_info = entity_get_info($entity_type);
-  $bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
-  $mediafield = config_get('bulk_media_upload.settings','bulk_media_upload_mediafield');
+  $bundle = config_get('bulk_media_upload.settings','bundle');
+  $mediafield = config_get('bulk_media_upload.settings','mediafield');
 
   if (empty($entity_type) || empty($bundle) || empty($mediafield)) {
     backdrop_set_message(t('You have not configured the Bulk Media Upload module. Go to the <a href="@admin-url">configuration page</a> to fix this.', array('@admin-url' => url('admin/config/media/bulk_media_upload'))), 'error');
@@ -100,12 +100,12 @@ function bulk_media_upload_upload_form_validate($form, &$form_state) {
  * Implements hook_submit().
  */
 function bulk_media_upload_upload_form_submit($form, &$form_state) {
-  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','entity_type');
   $entity_info = entity_get_info($entity_type);
 
   // Create new taxonomy terms
   if (isset($form['default_values'])) {
-    $fields = field_info_instances(config_get('bulk_media_upload.settings','bulk_media_upload_entity_type'), config_get('bulk_media_upload.settings','bulk_media_upload_bundle'));
+    $fields = field_info_instances(config_get('bulk_media_upload.settings','entity_type'), config_get('bulk_media_upload.settings','bundle'));
     foreach ($fields as $field) {
       $fieldinfo = field_info_field($field['field_name']);
       if($fieldinfo['module'] == 'taxonomy'){
@@ -143,16 +143,21 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
  */
 function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$context) {
   global $user;
-  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','entity_type');
   $entity_info = entity_get_info($entity_type);
   // Default label field to 'name'.
   $label_field = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
-  $mediafield_name = config_get('bulk_media_upload.settings','bulk_media_upload_mediafield');
-  $bundle = config_get('bulk_media_upload.settings','bulk_media_upload_bundle');
+  $mediafield_name = config_get('bulk_media_upload.settings','mediafield');
+  $bundle = config_get('bulk_media_upload.settings','bundle');
   $mediafield_info = field_info_instance($entity_type, $mediafield_name, $bundle);
 
   // Save media file.
-  $scheme = config_get('bulk_media_upload.settings','file_default_scheme', 'public') . '://';
+  $scheme = config_get('bulk_media_upload.settings','file_default_scheme');
+  if (!$scheme) {
+    $scheme = 'public';
+  }
+  $scheme .= '://';
+
   $source = $tmpfile['tmppath'];
 
   $directory = '';
@@ -174,7 +179,7 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   // Create the file object.
   $uri = file_stream_wrapper_uri_normalize($destination);
   $wrapper = file_stream_wrapper_get_instance_by_uri($uri);
-  $file = new StdClass;
+  $file = new File;
   $file->uid = $user->uid;
   $file->filename = basename($uri);
   $file->uri = $uri;
@@ -184,7 +189,7 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   $file->status = FILE_STATUS_PERMANENT;
   $file->is_new = TRUE;
   $file->status = FILE_STATUS_PERMANENT;
-  file_save($file);
+  $file->save();
 
   // Create the new entity.
   $entity = entity_create($entity_type, array(
@@ -201,14 +206,15 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   }
   // If the entity has a property tied to UID, set it so that, e.g., nodes will
   // be assigned an author.
-  $info = entity_get_property_info($entity_type);
-  foreach ($info['properties'] as $property) {
-    if (isset($property['schema field']) && $property['schema field'] == 'uid') {
+//$info = entity_get_property_info($entity_type);
+//foreach ($info['properties'] as $property) {
+//  if (isset($property['schema field']) && $property['schema field'] == 'uid') {
+    if (property_exists($entity, 'uid')) {
       $entity->uid = $user->uid;
-      break;
+//    break;
     }
-  }
-  entity_save($entity_type, $entity);
+//}
+  $entity->save();
 
   // Create the media field.
   $fieldinfo = field_info_field($mediafield_name);
@@ -230,14 +236,14 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
     field_attach_submit($entity_type, $entity, $form['default_values'], $form_state);
   }
 
-  entity_save($entity_type, $entity);
+  $entity->save();
 
   // Replace tokens in title - this has to be done after entity_save.
   $label = token_replace($form_state['values']['title'], array($entity_type => $entity, 'file' => $file), array('clear' => TRUE));
 
   $entity->$label_field = $label;
 
-  entity_save($entity_type, $entity);
+  $entity->save();
 
   $context['message'] = t('Importing: @filename', array('@filename' => $file->filename));
   $context['results']['ids'][] = $entity->$entity_info['entity keys']['id'];
@@ -247,12 +253,12 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
  * Finished function for batch
  */
 function _bulk_media_upload_batch_finished($success, $results, $operations) {
-  $entity_type = config_get('bulk_media_upload.settings','bulk_media_upload_entity_type');
+  $entity_type = config_get('bulk_media_upload.settings','entity_type');
   $entity_info = entity_get_info($entity_type);
   backdrop_set_message(t('@entity_type generation completed.', array('@entity_type' => $entity_info['label'])));
   $_SESSION['bulk_media_upload_batch_result'] = $results;
   // TODO: do landing pages for other entity types?
   if ($entity_type == 'node') {
-    backdrop_goto(config_get('bulk_media_upload.settings','bulk_media_upload_redirect_path'));
+    backdrop_goto(config_get('bulk_media_upload.settings','redirect_path'));
   }
 }
