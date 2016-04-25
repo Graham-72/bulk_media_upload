@@ -65,7 +65,6 @@ function bulk_media_upload_help($path, $arg) {
   return '';
 }
 
-
 /**
  * Implements hook_config_info().
  */
@@ -77,4 +76,3 @@ function bulk_media_upload_config_info()
   );
   return $prefixes;
 }
-
