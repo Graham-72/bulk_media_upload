@@ -5,4 +5,3 @@ description = With Bulk Media Upload you can upload a bunch of media files and a
 
 dependencies[] = entity
 dependencies[] = plupload
-dependencies[] = token
