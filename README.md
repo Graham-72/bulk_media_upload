@@ -35,11 +35,12 @@ This is an initial port of the module ready for testing.
   
 ## Configuration
 
-- Configuration settings are at admin/config/
+- Configuration settings are at admin/config/media/bulk_media_upload,
+  where you select
+  - Which entity type should be generated?
+  - Where to redirect after bulk media upload is finished.
 
-
-
-
+- There is a new option 'Bulk Media' at admin/content.
 
 ## Help & Documentation
 
@@ -56,6 +57,7 @@ directory for complete text.
 ## Current porting to Backdrop
 
 Graham Oliver (github.com/Graham-72/)
+JF (github.com/gifad)
 
 ## Credits
 
