@@ -1,6 +1,6 @@
 # Bulk Media Upload
 
-With Bulk Media Upload you can upload a bunch of (media) files and a
+With Bulk Media Upload you can upload a batch of (media) files and a
 new node will be created for every file. The files are selected via
 a browser file upload dialog and can be stored in a media, file or
 image field. Also default values can be chosen for the other fields
@@ -56,8 +56,8 @@ directory for complete text.
         
 ## Current porting to Backdrop
 
-Graham Oliver (github.com/Graham-72/)
-JF (github.com/gifad)
+- Graham Oliver (github.com/Graham-72/)
+- JF (github.com/gifad)
 
 ## Credits
 
