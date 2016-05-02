@@ -2,6 +2,5 @@ name = Bulk Media Upload
 backdrop = 1.x
 package = Media
 description = With Bulk Media Upload you can upload a bunch of media files and a new node will be created for every file.
-
-dependencies[] = entity
+type = module
 dependencies[] = plupload
