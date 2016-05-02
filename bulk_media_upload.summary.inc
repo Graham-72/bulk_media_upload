@@ -257,7 +257,7 @@ function bulk_media_upload_node_operations() {
   if (function_exists(node_node_operations)) {
     return array();
   }
-  $operations = array(/*
+  $operations = array(
     'publish' => array(
       'label' => t('Publish selected content'),
       'callback' => 'node_mass_update',
@@ -292,6 +292,6 @@ function bulk_media_upload_node_operations() {
       'label' => t('Delete selected content'),
       'callback' => NULL,
     ),
-*/);
+  );
   return $operations;
 }
