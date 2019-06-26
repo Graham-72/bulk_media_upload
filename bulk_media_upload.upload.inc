@@ -112,7 +112,7 @@ function bulk_media_upload_upload_form_submit($form, &$form_state) {
         foreach ($form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE] as $key => $term) {
           if($term['tid'] == 'autocreate'){
             // Create term.
-            $term = (object) $term;
+            $term = new TaxonomyTerm($term);
             unset($term->tid);
             taxonomy_term_save($term);
             $form_state['values']['default_values'][$field['field_name']][LANGUAGE_NONE][$key] = (array) $term;
@@ -145,8 +145,12 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   global $user;
   $entity_type = config_get('bulk_media_upload.settings','entity_type');
   $entity_info = entity_get_info($entity_type);
-  // Default label field to 'name'.
-  $label_field = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
+  if ($entity_type === 'node') {
+    $label_field = 'title';
+  }
+  else {
+    $label_field = 'name';
+  }
   $mediafield_name = config_get('bulk_media_upload.settings','mediafield');
   $bundle = config_get('bulk_media_upload.settings','bundle');
   $mediafield_info = field_info_instance($entity_type, $mediafield_name, $bundle);
@@ -178,17 +182,15 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
 
   // Create the file object.
   $uri = file_stream_wrapper_uri_normalize($destination);
-  $wrapper = file_stream_wrapper_get_instance_by_uri($uri);
-  $file = new File;
-  $file->uid = $user->uid;
-  $file->filename = basename($uri);
-  $file->uri = $uri;
-  $file->filemime = file_get_mimetype($uri);
-  $file->filesize = @filesize($uri);
-  $file->timestamp = REQUEST_TIME;
-  $file->status = FILE_STATUS_PERMANENT;
-  $file->is_new = TRUE;
-  $file->status = FILE_STATUS_PERMANENT;
+  $file = new File(array(
+    'uri' => $uri,
+    'uid' => $user->uid,
+    // This is gagged because some uris will not support it.
+    'filesize' => @filesize($uri),
+    'timestamp' => REQUEST_TIME,
+    'status' => FILE_STATUS_PERMANENT,
+    'is_new' => TRUE,
+  ));
   $file->save();
 
   // Create the new entity.
@@ -246,7 +248,7 @@ function _bulk_media_upload_generate_entity($tmpfile, $form, $form_state, &$cont
   $entity->save();
 
   $context['message'] = t('Importing: @filename', array('@filename' => $file->filename));
-  $context['results']['ids'][] = $entity->$entity_info['entity keys']['id'];
+  $context['results']['ids'][] = $entity->{$entity_info['entity keys']['id']};
 }
 
 /**

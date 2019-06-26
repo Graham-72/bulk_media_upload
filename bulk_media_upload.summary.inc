@@ -54,7 +54,7 @@ function bulk_media_upload_summary($form, $form_state) {
 
   // Enable language column if translation module is enabled or if we have any
   // node with language.
-  $multilanguage = (module_exists('translation') || db_query_range("SELECT 1 FROM {node} WHERE language <> :language", 0, 1, array(':language' => LANGUAGE_NONE))->fetchField());
+  $multilanguage = (module_exists('translation') || db_query_range("SELECT 1 FROM {node} WHERE langcode <> :language", 0, 1, array(':language' => LANGUAGE_NONE))->fetchField());
 
   // Build the sortable table header.
   $header = array(
@@ -85,7 +85,7 @@ function bulk_media_upload_summary($form, $form_state) {
   $destination = backdrop_get_destination();
   $options = array();
   foreach ($nodes as $node) {
-    $l_options = $node->language != LANGUAGE_NONE && isset($languages[$node->language]) ? array('language' => $languages[$node->language]) : array();
+    $l_options = $node->langcode != LANGUAGE_NONE && isset($languages[$node->langcode]) ? array('language' => $languages[$node->langcode]) : array();
     $options[$node->nid] = array(
       'title' => array(
         'data' => array(
@@ -102,11 +102,11 @@ function bulk_media_upload_summary($form, $form_state) {
       'changed' => format_date($node->changed, 'short'),
     );
     if ($multilanguage) {
-      if ($node->language == LANGUAGE_NONE || isset($languages[$node->language])) {
-        $options[$node->nid]['language'] = $node->language == LANGUAGE_NONE ? t('Language neutral') : t($languages[$node->language]->name);
+      if ($node->langcode == LANGUAGE_NONE || isset($languages[$node->langcode])) {
+        $options[$node->nid]['language'] = $node->langcode == LANGUAGE_NONE ? t('Language neutral') : t($languages[$node->langcode]->name);
       }
       else {
-        $options[$node->nid]['language'] = t('Undefined language (@langcode)', array('@langcode' => $node->language));
+        $options[$node->nid]['language'] = t('Undefined language (@langcode)', array('@langcode' => $node->langcode));
       }
     }
     // Build a list of all the accessible operations for the current node.
@@ -254,7 +254,7 @@ function bulk_media_upload_summary_node_multiple_delete_confirm_submit($form, &$
  * Implements hook_node_operations().
  */
 function bulk_media_upload_node_operations() {
-  if (function_exists(node_node_operations)) {
+  if (function_exists('node_node_operations')) {
     return array();
   }
   $operations = array(
