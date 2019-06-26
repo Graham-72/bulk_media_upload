@@ -54,7 +54,7 @@ function bulk_media_upload_summary($form, $form_state) {
 
   // Enable language column if translation module is enabled or if we have any
   // node with language.
-  $multilanguage = (module_exists('translation') || db_query_range("SELECT 1 FROM {node} WHERE language <> :language", 0, 1, array(':language' => LANGUAGE_NONE))->fetchField());
+  $multilanguage = (module_exists('translation') || db_query_range("SELECT 1 FROM {node} WHERE langcode <> :language", 0, 1, array(':language' => LANGUAGE_NONE))->fetchField());
 
   // Build the sortable table header.
   $header = array(
