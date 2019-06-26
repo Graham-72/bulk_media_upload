@@ -65,7 +65,7 @@ function bulk_media_upload_summary($form, $form_state) {
     'changed' => array('data' => t('Updated'), 'field' => 'n.changed', 'sort' => 'desc'),
   );
   if ($multilanguage) {
-    $header['language'] = array('data' => t('Language'), 'field' => 'n.language');
+    $header['language'] = array('data' => t('Language'), 'field' => 'n.langcode');
   }
   $header['operations'] = array('data' => t('Operations'));
 
