@@ -160,6 +160,7 @@ function bulk_media_upload_admin_submit($form, &$form_state) {
     }
   }
   $config->save();
+  backdrop_set_message(t('The configuration options have been saved.'));
 }
 
 /**
